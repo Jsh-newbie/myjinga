@@ -1,0 +1,15 @@
+{
+  "name": "myjinga-landing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Myjinga landing page for Firebase App Hosting",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "serve -s . -l ${PORT:-8080}"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}
