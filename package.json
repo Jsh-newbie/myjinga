@@ -1,15 +1,32 @@
 {
-  "name": "myjinga-landing",
+  "name": "myjinga",
   "version": "1.0.0",
   "private": true,
-  "description": "Myjinga landing page for Firebase App Hosting",
+  "description": "Myjinga web application",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "start": "serve -s . -l ${PORT:-8080}"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check .",
+    "format": "prettier --write ."
   },
   "dependencies": {
-    "serve": "^14.2.4"
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.17",
+    "@types/react": "18.3.24",
+    "@types/react-dom": "18.3.7",
+    "eslint": "8.57.1",
+    "eslint-config-next": "14.2.35",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
   }
 }
