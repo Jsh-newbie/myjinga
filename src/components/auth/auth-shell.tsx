@@ -24,7 +24,7 @@ export function AuthShell({
           boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
         }}
       >
-        <Link href="/" style={{ color: '#15803d', fontWeight: 700, fontSize: 14 }}>
+        <Link href="/" style={{ color: 'var(--brand-700)', fontWeight: 700, fontSize: 14 }}>
           ← 메인으로 돌아가기
         </Link>
         <h1 style={{ margin: '14px 0 8px', fontSize: 34 }}>{title}</h1>
@@ -40,7 +40,7 @@ export function AuthShell({
               borderRadius: 12,
               fontWeight: 700,
               border: '1px solid #d4d4d8',
-              background: mode === 'signin' ? '#15803d' : 'white',
+              background: mode === 'signin' ? 'var(--brand-700)' : 'white',
               color: mode === 'signin' ? 'white' : '#27272a',
             }}
           >
@@ -55,7 +55,7 @@ export function AuthShell({
               borderRadius: 12,
               fontWeight: 700,
               border: '1px solid #d4d4d8',
-              background: mode === 'signup' ? '#15803d' : 'white',
+              background: mode === 'signup' ? 'var(--brand-700)' : 'white',
               color: mode === 'signup' ? 'white' : '#27272a',
             }}
           >

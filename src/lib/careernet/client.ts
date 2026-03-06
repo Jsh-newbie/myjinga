@@ -262,6 +262,7 @@ async function submitV2Report(config: LiveConfig, params: SubmitParams): Promise
   const url = 'https://www.career.go.kr/inspct/openapi/v2/report';
   const answersArray = toV2AnswerArray(params.answers);
 
+  // V2 매뉴얼: name, email 은 요청 파라미터에 포함하지 않음
   const body = {
     apikey: config.apiKey,
     qno: Number(params.qestrnSeq),
@@ -269,9 +270,7 @@ async function submitV2Report(config: LiveConfig, params: SubmitParams): Promise
     gender: params.gender,
     grade: params.grade,
     startdtm: params.startDtm,
-    name: params.name,
     school: params.school,
-    email: '',
     answers: answersArray,
   };
 

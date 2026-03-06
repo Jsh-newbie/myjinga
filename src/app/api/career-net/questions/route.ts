@@ -4,6 +4,7 @@ import { fail, ok } from '@/lib/api/response';
 import { fetchQuestions } from '@/lib/careernet/client';
 import { isCareerTestTypeId } from '@/lib/careernet/constants';
 import { verifyBearerToken } from '@/lib/firebase/server-auth';
+import { getUserProfile } from '@/lib/users/repository';
 
 export const runtime = 'nodejs';
 
@@ -34,8 +35,9 @@ export async function GET(request: Request) {
       );
     }
 
-    // TODO: 사용자 프로필에서 schoolLevel 가져오기
-    const schoolLevel = 'middle' as const;
+    const uid = authResult.decodedToken.uid;
+    const profile = await getUserProfile(uid);
+    const schoolLevel = profile?.schoolLevel ?? 'middle';
     const questionnaire = await fetchQuestions(testTypeId, schoolLevel);
 
     return ok(questionnaire);

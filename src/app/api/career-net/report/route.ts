@@ -10,6 +10,7 @@ import { fetchReportDetail } from '@/lib/careernet/report-scraper';
 import { toV1AnswerString, toV2AnswerArray } from '@/lib/careernet/answer-format';
 import { submitRequestSchema } from '@/lib/careernet/types';
 import { verifyBearerToken } from '@/lib/firebase/server-auth';
+import { getUserProfile } from '@/lib/users/repository';
 
 export const runtime = 'nodejs';
 
@@ -50,18 +51,20 @@ export async function POST(request: Request) {
     }
 
     const meta = CAREER_TESTS[session.testTypeId];
+    const profile = await getUserProfile(uid);
 
-    // TODO: 사용자 프로필에서 실제 값 가져오기
+    const genderCode = profile?.gender === 'female' ? GENDER_CODE.female : GENDER_CODE.male;
+
     const result = await submitReport({
       testTypeId: session.testTypeId,
       qestrnSeq: session.qestrnSeq,
       trgetSe: session.trgetSe,
       answers: session.answers,
       startDtm: session.startDtm,
-      name: '',
-      gender: GENDER_CODE.male,
-      school: '',
-      grade: '1',
+      name: profile?.name ?? '',
+      gender: genderCode,
+      school: profile?.schoolName ?? '',
+      grade: String(profile?.grade ?? 1),
     });
 
     const answerPayload = meta.apiVersion === 'v2'

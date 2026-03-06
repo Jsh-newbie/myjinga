@@ -58,7 +58,10 @@ export interface TestSession {
 
   answers: Record<string, string>;
 
+  /** epoch ms (커리어넷 API 제출용) */
   startDtm: number;
+  /** 서버 타임스탬프 (내부 기록용) */
+  startedAt: FirebaseFirestore.Timestamp;
   createdAt: FirebaseFirestore.Timestamp;
   updatedAt: FirebaseFirestore.Timestamp;
 }
@@ -83,6 +86,8 @@ export interface TestResult {
   };
 
   reportDetail?: ReportDetail;
+  /** reportDetail fetch 진행 중 여부 (중복 fetch 방지) */
+  reportDetailFetching?: boolean;
 
   completedAt: FirebaseFirestore.Timestamp;
   createdAt: FirebaseFirestore.Timestamp;
@@ -189,12 +194,45 @@ export interface ReportRealm {
   percentile: number;
   /** T점수 */
   tScore: number;
+  /** 수준 (높음/보통/낮음 등) */
+  level?: string;
 }
 
 export interface RealmMeta {
   code: string;
   name: string;
   description: string;
+}
+
+/** 검사별 영역 상세 해석 (정적 JSON에서 추출) */
+export interface RealmInterpretation {
+  code: string;
+  name: string;
+  /** 영역 설명 */
+  description: string;
+  /** 수준별 해석 텍스트 (점수 기준으로 선택) */
+  interpretations: {
+    high: string;
+    mid: string;
+    low: string;
+  };
+  /** 역량 개발 팁 */
+  tips?: string[];
+  /** 관련 직업 (aptitude) */
+  relatedJobs?: Array<{ code: string; name: string }>;
+  /** 능력 향상 활동 (aptitude) */
+  improves?: string[];
+  /** 상위 카테고리 (competency: 진로설계/진로준비) */
+  category?: string;
+}
+
+/** competency 전용: 상위 영역(진로설계/진로준비) 점수 */
+export interface CompetencyGroupScore {
+  code: string;
+  name: string;
+  tScore: number;
+  level: string;
+  avgScore: number;
 }
 
 export interface RecommendedJob {
@@ -211,6 +249,39 @@ export interface RecommendedMajor {
   thumbnail?: string;
 }
 
+/** interest 전용: Holland 6유형 프로파일 */
+export interface HollandProfile {
+  code: string;
+  name: string;
+  rawScore: number;
+  percentile: number;
+  tScore: number;
+}
+
+/** values 전용: 상위 4개 카테고리 */
+export interface ValuesUpper {
+  code: string;
+  name: string;
+  score: number;
+}
+
+/** values 전용: 12개 하위 차원 */
+export interface ValuesSubDim {
+  code: string;
+  name: string;
+  description: string;
+  userScore: number;
+  demographicAvg?: number;
+}
+
+/** maturity 전용: 집계 점수 */
+export interface AggregateScore {
+  rawScore: number;
+  percentile: number;
+  tScore: number;
+  level: string;
+}
+
 export interface ReportDetail {
   inspctSeq: string;
   testCode: string;
@@ -220,8 +291,24 @@ export interface ReportDetail {
   completedAt: string;
   responseTime: number;
   responsePattern?: string;
+  /** 응답 총점 (competency: 성실응답 여부 판단) */
+  responseScore?: number;
+  /** 스키마 버전 (re-fetch 트리거용) */
+  schemaVersion?: number;
   realms: ReportRealm[];
   realmMeta?: RealmMeta[];
+  /** 영역별 상세 해석 (정적 JSON에서 추출) */
+  realmInterpretations?: RealmInterpretation[];
+  /** competency 전용: 상위 영역 점수 */
+  competencyGroups?: CompetencyGroupScore[];
+  /** interest 전용: 흥미/직업 Holland 프로파일 */
+  interestProfiles?: { interest: HollandProfile[]; job: HollandProfile[] };
+  /** values 전용: 상위 카테고리 + 하위 차원 */
+  valuesHierarchy?: { uppers: ValuesUpper[]; subDimensions: ValuesSubDim[] };
+  /** maturity 전용: 태도/능력/진로행동/시험불안 집계 */
+  maturityAggregates?: Record<string, AggregateScore>;
+  /** maturity 전용: 응답 일관성 */
+  maturityConsistency?: { level: string; description: string };
   recommendedJobs?: RecommendedJob[];
   recommendedMajors?: RecommendedMajor[];
 }

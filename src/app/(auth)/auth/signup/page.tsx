@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { AuthShell } from '@/components/auth/auth-shell';
 import { toAuthErrorMessage } from '@/lib/auth/error-message';
 import { getClientAuth } from '@/lib/firebase/client';
+import { api } from '@/lib/api/client';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -49,24 +50,16 @@ export default function SignUpPage() {
       await updateProfile(credential.user, { displayName: name });
 
       const token = await credential.user.getIdToken();
-      const response = await fetch('/api/users/init', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          email,
-          name,
-          birthDate: new Date(birthDate).toISOString(),
-          schoolLevel,
-          grade: Number(grade),
-        }),
+      const result = await api.initUser(token, {
+        email,
+        name,
+        birthDate: new Date(birthDate).toISOString(),
+        schoolLevel,
+        grade: Number(grade),
       });
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result?.error?.message ?? '회원정보 초기화에 실패했습니다.');
+      if (!result.success) {
+        throw new Error(result.error.message || '회원정보 초기화에 실패했습니다.');
       }
 
       router.push('/dashboard');
@@ -150,7 +143,7 @@ export default function SignUpPage() {
             padding: '12px 14px',
             borderRadius: 10,
             border: 'none',
-            background: pending ? '#86efac' : '#15803d',
+            background: pending ? 'var(--brand-100)' : 'var(--brand-700)',
             color: 'white',
             fontWeight: 700,
             cursor: pending ? 'default' : 'pointer',
@@ -164,7 +157,7 @@ export default function SignUpPage() {
 
       <p style={{ marginTop: 16, color: '#52525b' }}>
         이미 계정이 있나요?{' '}
-        <Link href="/auth/signin" style={{ color: '#15803d', fontWeight: 700 }}>
+        <Link href="/auth/signin" style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
           로그인 하기
         </Link>
       </p>

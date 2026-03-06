@@ -6,17 +6,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { getClientAuth } from '@/lib/firebase/client';
+import { api, type SessionItem } from '@/lib/api/client';
 import type { UserProfile } from '@/types/user';
 
 type LoadingState = 'loading' | 'ready' | 'error';
-
-interface InProgressSession {
-  sessionId: string;
-  testTypeId: string;
-  testName: string;
-  totalQuestions: number;
-  answeredCount: number;
-}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -24,7 +17,8 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [state, setState] = useState<LoadingState>('loading');
   const [error, setError] = useState('');
-  const [inProgressSessions, setInProgressSessions] = useState<InProgressSession[]>([]);
+  const [inProgressSessions, setInProgressSessions] = useState<SessionItem[]>([]);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const auth = useMemo(() => {
     try {
@@ -51,36 +45,28 @@ export default function DashboardPage() {
 
       try {
         const token = await nextUser.getIdToken();
-        const response = await fetch('/api/users/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const result = await response.json();
+        const meResult = await api.getMe(token);
 
-        if (!response.ok) {
+        if (!meResult.success) {
           const detailMessage =
-            typeof result?.error?.details?.message === 'string' ? result.error.details.message : '';
+            typeof meResult.error?.details?.message === 'string' ? meResult.error.details.message : '';
           setError(
             detailMessage
-              ? `${result?.error?.message ?? '프로필을 불러오지 못했습니다.'} (${detailMessage})`
-              : (result?.error?.message ?? '프로필을 불러오지 못했습니다.')
+              ? `${meResult.error.message} (${detailMessage})`
+              : meResult.error.message
           );
           setState('error');
           return;
         }
 
-        if (result?.data?.profile) {
-          setProfile(result.data.profile as UserProfile);
-        }
+        setProfile(meResult.data.profile as UserProfile);
         setState('ready');
 
         // Load in-progress test sessions
         try {
-          const sessRes = await fetch('/api/career-net/sessions', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (sessRes.ok) {
-            const sessData = await sessRes.json();
-            setInProgressSessions(sessData.data?.sessions ?? []);
+          const sessResult = await api.listSessions(token);
+          if (sessResult.success) {
+            setInProgressSessions(sessResult.data.sessions);
           }
         } catch {
           // silent - non-critical
@@ -103,11 +89,12 @@ export default function DashboardPage() {
     router.replace('/auth/signin');
   }
 
-  const displayName = profile?.name ?? user?.displayName ?? '';
+  const displayName = profile?.nickname || profile?.name || user?.displayName || '';
   const schoolLabel = profile
     ? `${profile.schoolLevel === 'high' ? '고' : '중'}${profile.grade} 학생`
     : '';
-  const isPremium = profile?.subscription?.plan === 'premium';
+  // 베타 기간 중 프리미엄 기능 비활성화
+  // const isPremium = profile?.subscription?.plan === 'premium';
 
   if (state === 'loading') {
     return <MainSkeleton />;
@@ -117,9 +104,13 @@ export default function DashboardPage() {
     <div className="main-page">
       {/* Header */}
       <header className="main-header">
-        <span className="main-header-logo">마진가</span>
+        <span className="main-header-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="마진가 로고" width={32} height={32} style={{ borderRadius: 8 }} />
+          <span>My <strong style={{ color: 'var(--brand-700)' }}>진로</strong> Guide</span>
+        </span>
         <div className="main-header-actions">
-          <button className="main-header-btn" onClick={handleLogout} aria-label="로그아웃">
+          <button className="main-header-btn" onClick={() => setShowLogoutModal(true)} aria-label="로그아웃">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
@@ -144,7 +135,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Profile card */}
-      <section className="main-profile-card">
+      <Link href="/profile" className="main-profile-card" style={{ cursor: 'pointer' }}>
         <div className="main-profile-avatar">
           {displayName ? displayName.charAt(0) : '?'}
         </div>
@@ -152,8 +143,8 @@ export default function DashboardPage() {
           <div className="main-profile-name">
             {displayName || user?.email || '-'}
             {' '}
-            <span className={`main-plan-badge ${isPremium ? 'main-plan-badge--premium' : 'main-plan-badge--free'}`}>
-              {isPremium ? 'Premium' : 'Free'}
+            <span className="main-plan-badge main-plan-badge--beta">
+              Beta (무료)
             </span>
           </div>
           <div className="main-profile-detail">
@@ -161,7 +152,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <span className="main-card-arrow">&rsaquo;</span>
-      </section>
+      </Link>
 
       {error && (
         <p style={{ color: '#b91c1c', fontSize: 13, fontWeight: 600, margin: '12px 0 0' }}>{error}</p>
@@ -227,7 +218,7 @@ export default function DashboardPage() {
         <span className="main-card-arrow">&rsaquo;</span>
       </Link>
       <Link href="/explore" className="main-card">
-        <div className="main-card-icon" style={{ background: '#dcfce7', color: '#15803d' }}>
+        <div className="main-card-icon" style={{ background: 'var(--brand-100)', color: 'var(--brand-700)' }}>
           <ExploreIcon />
         </div>
         <div className="main-card-body">
@@ -237,21 +228,32 @@ export default function DashboardPage() {
         <span className="main-card-arrow">&rsaquo;</span>
       </Link>
 
-      {/* AI */}
-      {isPremium && (
-        <>
-          <h2 className="main-section-title">AI 보조</h2>
-          <Link href="/ai/writing" className="main-card">
-            <div className="main-card-icon" style={{ background: '#f3e8ff', color: '#7c3aed' }}>
-              <AiIcon />
+      {/* AI - 베타 기간 중 숨김 처리 */}
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="logout-overlay" onClick={() => setShowLogoutModal(false)}>
+          <div className="logout-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="logout-handle" />
+            <div className="logout-icon-wrap">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
             </div>
-            <div className="main-card-body">
-              <strong>AI 글쓰기 도우미</strong>
-              <span>학생부 초안을 AI가 도와줘요</span>
+            <h3 className="logout-title">로그아웃</h3>
+            <p className="logout-desc">정말 로그아웃 하시겠습니까?</p>
+            <div className="logout-actions">
+              <button className="logout-btn logout-btn--cancel" onClick={() => setShowLogoutModal(false)}>
+                취소
+              </button>
+              <button className="logout-btn logout-btn--confirm" onClick={handleLogout}>
+                로그아웃
+              </button>
             </div>
-            <span className="main-card-arrow">&rsaquo;</span>
-          </Link>
-        </>
+          </div>
+        </div>
       )}
 
       {/* Bottom Nav */}
@@ -304,7 +306,11 @@ function MainSkeleton() {
   return (
     <div className="main-page">
       <header className="main-header">
-        <span className="main-header-logo">마진가</span>
+        <span className="main-header-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="마진가 로고" width={32} height={32} style={{ borderRadius: 8 }} />
+          <span>My <strong style={{ color: 'var(--brand-700)' }}>진로</strong> Guide</span>
+        </span>
       </header>
       <section className="main-greeting">
         <div className="main-skeleton" style={{ width: 180, height: 26, marginBottom: 8 }} />

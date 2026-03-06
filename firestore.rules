@@ -19,6 +19,10 @@ service cloud.firestore {
       match /testResults/{testId} {
         allow read, write: if isOwner(uid);
       }
+
+      match /testSessions/{sessionId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     match /majors/{majorId} {

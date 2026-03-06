@@ -5,6 +5,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { useParams, useRouter } from 'next/navigation';
 
 import { getClientAuth } from '@/lib/firebase/client';
+import { api } from '@/lib/api/client';
 import { CAREER_TESTS, isCareerTestTypeId } from '@/lib/careernet/constants';
 
 interface Choice {
@@ -75,35 +76,28 @@ export default function CareerTestProgressPage() {
     async function load() {
       try {
         const token = await user!.getIdToken();
-        const headers = { Authorization: `Bearer ${token}` };
 
         // Check for existing session
-        const sessRes = await fetch('/api/career-net/sessions', { headers });
-        if (sessRes.ok) {
-          const sessData = await sessRes.json();
-          const existing = (sessData.data?.sessions ?? []).find(
-            (s: { testTypeId: string }) => s.testTypeId === testTypeId
+        const sessResult = await api.listSessions(token);
+        if (sessResult.success) {
+          const existing = sessResult.data.sessions.find(
+            (s) => s.testTypeId === testTypeId
           );
           if (existing) {
-            // Load session detail
-            const detailRes = await fetch(`/api/career-net/sessions/${existing.sessionId}`, { headers });
-            if (detailRes.ok) {
-              const detail = await detailRes.json();
-              const session = detail.data?.session;
-              if (session) {
-                setSessionId(existing.sessionId);
-                setAnswers(session.answers ?? {});
-                setCurrentIndex(session.currentIndex ?? 0);
-              }
+            const detailResult = await api.getSession(token, existing.sessionId);
+            if (detailResult.success) {
+              const session = detailResult.data.session;
+              setSessionId(existing.sessionId);
+              setAnswers(session.answers ?? {});
+              setCurrentIndex(session.currentIndex ?? 0);
             }
           }
         }
 
         // Load questions
-        const qRes = await fetch(`/api/career-net/questions?testTypeId=${testTypeId}`, { headers });
-        if (qRes.ok) {
-          const qData = await qRes.json();
-          setQuestions(qData.data?.questions ?? []);
+        const qResult = await api.getQuestions(token, testTypeId);
+        if (qResult.success) {
+          setQuestions(qResult.data.questions);
         }
       } catch {
         // silent
@@ -139,27 +133,21 @@ export default function CareerTestProgressPage() {
     setSaving(true);
     try {
       const currentAnswers = answersRef.current;
-      const res = await fetch('/api/career-net/sessions', {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          testTypeId,
-          answers: currentAnswers,
-          currentIndex,
-          answeredCount: Object.keys(currentAnswers).length,
-          totalQuestions: questions.length,
-        }),
+      const result = await api.saveSession(token, {
+        testTypeId,
+        answers: currentAnswers,
+        currentIndex,
+        answeredCount: Object.keys(currentAnswers).length,
+        totalQuestions: questions.length,
       });
-      if (res.ok) {
-        const d = await res.json();
-        if (d.data?.sessionId) setSessionId(d.data.sessionId);
+      if (result.success) {
+        setSessionId(result.data.sessionId);
         unsavedCountRef.current = 0;
       }
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('[saveSession]', err);
+      setToast('저장에 실패했습니다. 다시 시도해 주세요.');
+      setTimeout(() => setToast(''), 3000);
     } finally {
       setSaving(false);
     }
@@ -218,22 +206,14 @@ export default function CareerTestProgressPage() {
     }
 
     try {
-      const res = await fetch('/api/career-net/report', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sessionId }),
-      });
+      const result = await api.submitTest(token, sessionId);
 
-      if (res.ok) {
-        const d = await res.json();
-        setResultId(d.data?.resultId ?? null);
+      if (result.success) {
+        setResultId(result.data.resultId);
         setModal('done');
       } else {
         setModal('none');
-        setToast('제출에 실패했습니다. 다시 시도해 주세요.');
+        setToast(result.error.message || '제출에 실패했습니다. 다시 시도해 주세요.');
         setTimeout(() => setToast(''), 3000);
       }
     } catch {

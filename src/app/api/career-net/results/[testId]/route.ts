@@ -1,3 +1,5 @@
+import { FieldValue } from 'firebase-admin/firestore';
+
 import { fail, ok } from '@/lib/api/response';
 import { getTestResult } from '@/lib/careernet/repository';
 import { fetchReportDetail } from '@/lib/careernet/report-scraper';
@@ -26,18 +28,35 @@ export async function GET(
     }
 
     // reportDetail이 없거나 불완전하면 실시간으로 fetch 후 저장
-    const needsFetch = !item.reportDetail || !item.reportDetail.realmMeta;
-    if (needsFetch && item.resultUrl) {
-      const reportDetail = await fetchReportDetail(item.resultUrl);
-      if (reportDetail) {
-        item.reportDetail = reportDetail;
-        // 비동기로 Firestore에 저장 (응답 지연 방지)
-        getAdminDb()
-          .collection('users')
-          .doc(uid)
-          .collection('testResults')
-          .doc(item.id)
-          .update({ reportDetail })
+    // reportDetailFetching 플래그로 동시 요청 시 중복 fetch 방지
+    const needsFetch = !item.reportDetail || (item.reportDetail.schemaVersion ?? 0) < 2;
+    if (needsFetch && item.resultUrl && !item.reportDetailFetching) {
+      const docRef = getAdminDb()
+        .collection('users')
+        .doc(uid)
+        .collection('testResults')
+        .doc(item.id);
+
+      // fetch 시작 전 플래그 설정
+      await docRef.update({ reportDetailFetching: true });
+
+      try {
+        const reportDetail = await fetchReportDetail(item.resultUrl);
+        if (reportDetail) {
+          item.reportDetail = reportDetail;
+          // fetch 완료 후 결과 저장 + 플래그 해제
+          docRef
+            .update({ reportDetail, reportDetailFetching: FieldValue.delete() })
+            .catch(() => { /* silent */ });
+        } else {
+          docRef
+            .update({ reportDetailFetching: FieldValue.delete() })
+            .catch(() => { /* silent */ });
+        }
+      } catch {
+        // fetch 실패 시 플래그 해제
+        docRef
+          .update({ reportDetailFetching: FieldValue.delete() })
           .catch(() => { /* silent */ });
       }
     }

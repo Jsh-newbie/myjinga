@@ -75,7 +75,7 @@ export default function SignInPage() {
             padding: '12px 14px',
             borderRadius: 10,
             border: 'none',
-            background: pending ? '#86efac' : '#15803d',
+            background: pending ? 'var(--brand-100)' : 'var(--brand-700)',
             color: 'white',
             fontWeight: 700,
             cursor: pending ? 'default' : 'pointer',
@@ -89,7 +89,7 @@ export default function SignInPage() {
 
       <p style={{ marginTop: 16, color: '#52525b' }}>
         계정이 없나요?{' '}
-        <Link href="/auth/signup" style={{ color: '#15803d', fontWeight: 700 }}>
+        <Link href="/auth/signup" style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
           회원가입 하기
         </Link>
       </p>

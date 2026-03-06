@@ -68,3 +68,8 @@ env:
     availability:
       - RUNTIME
     secret: CAREERNET_API_KEY
+
+  - variable: NEIS_API_KEY
+    availability:
+      - RUNTIME
+    secret: NEIS_API_KEY

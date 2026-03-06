@@ -3,6 +3,7 @@ import { CAREER_TESTS } from '@/lib/careernet/constants';
 import { listInProgressSessions, upsertTestSession } from '@/lib/careernet/repository';
 import { sessionSaveRequestSchema } from '@/lib/careernet/types';
 import { verifyBearerToken } from '@/lib/firebase/server-auth';
+import { getUserProfile } from '@/lib/users/repository';
 
 export const runtime = 'nodejs';
 
@@ -63,7 +64,11 @@ export async function PUT(request: Request) {
       );
     }
 
-    const result = await upsertTestSession(authResult.decodedToken.uid, parsed.data);
+    const uid = authResult.decodedToken.uid;
+    const profile = await getUserProfile(uid);
+    const schoolLevel = profile?.schoolLevel ?? 'middle';
+
+    const result = await upsertTestSession(uid, { ...parsed.data, schoolLevel });
 
     return ok({ sessionId: result.sessionId, savedAt: new Date().toISOString() });
   } catch (error) {
