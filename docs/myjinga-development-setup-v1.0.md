@@ -38,6 +38,10 @@ npm run typecheck
 npm run format:check
 ```
 
+5. 주요 페이지 확인
+- 메인 랜딩: `http://localhost:3000/`
+- 인증 테스트: `http://localhost:3000/auth`
+
 ---
 
 ## 3. 기본 구조
