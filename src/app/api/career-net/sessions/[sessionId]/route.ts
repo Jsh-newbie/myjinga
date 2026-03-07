@@ -6,9 +6,10 @@ export const runtime = 'nodejs';
 
 export async function GET(
   _request: Request,
-  context: { params: { sessionId: string } }
+  context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
+    const { sessionId } = await context.params;
     const authResult = await verifyBearerToken();
     if (!authResult.ok) {
       return fail(
@@ -17,7 +18,7 @@ export async function GET(
       );
     }
 
-    const session = await getTestSession(authResult.decodedToken.uid, context.params.sessionId);
+    const session = await getTestSession(authResult.decodedToken.uid, sessionId);
     if (!session) {
       return fail({ code: 'NOT_FOUND', message: '검사 세션을 찾을 수 없습니다.' }, 404);
     }
@@ -34,9 +35,10 @@ export async function GET(
 
 export async function DELETE(
   _request: Request,
-  context: { params: { sessionId: string } }
+  context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
+    const { sessionId } = await context.params;
     const authResult = await verifyBearerToken();
     if (!authResult.ok) {
       return fail(
@@ -46,12 +48,12 @@ export async function DELETE(
     }
 
     const uid = authResult.decodedToken.uid;
-    const session = await getTestSession(uid, context.params.sessionId);
+    const session = await getTestSession(uid, sessionId);
     if (!session) {
       return fail({ code: 'NOT_FOUND', message: '검사 세션을 찾을 수 없습니다.' }, 404);
     }
 
-    await deleteTestSession(uid, context.params.sessionId);
+    await deleteTestSession(uid, sessionId);
     return ok({ deleted: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : '세션 삭제 중 오류가 발생했습니다.';

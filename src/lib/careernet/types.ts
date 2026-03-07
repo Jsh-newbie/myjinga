@@ -222,8 +222,23 @@ export interface RealmInterpretation {
   relatedJobs?: Array<{ code: string; name: string }>;
   /** 능력 향상 활동 (aptitude) */
   improves?: string[];
+  /** 직업군 설명 (aptitude: etc) */
+  jobGroupDescription?: string;
+  /** 세부직업군별 직업 (aptitude: jobgroups) */
+  jobGroups?: Array<{
+    groupName: string;
+    jobs: Array<{ code: number; name: string }>;
+  }>;
   /** 상위 카테고리 (competency: 진로설계/진로준비) */
   category?: string;
+  /** 흥미 유형 특성 (interest: natures) */
+  natures?: string[];
+  /** 관련 직업군 (interest: occupation) */
+  occupation?: string[];
+  /** 신생직업 (interest: future) */
+  futureJobs?: Array<{ code: string; name: string }>;
+  /** 관련직업 (interest: relative) */
+  relativeJobs?: Array<{ code: string; name: string }>;
 }
 
 /** competency 전용: 상위 영역(진로설계/진로준비) 점수 */
@@ -274,6 +289,22 @@ export interface ValuesSubDim {
   demographicAvg?: number;
 }
 
+/** values 전용: 가치지향 유형별 관련 직업 */
+export interface ValuesOrientationJob {
+  name: string;
+  jobCode?: string;
+}
+
+/** values 전용: 가치지향 유형 (안정지향/의미지향/변화지향/성취지향) */
+export interface ValuesOrientation {
+  code: string;
+  name: string;
+  description: string;
+  score: number;
+  subValues: string[];
+  jobs: ValuesOrientationJob[];
+}
+
 /** maturity 전용: 집계 점수 */
 export interface AggregateScore {
   rawScore: number;
@@ -303,8 +334,20 @@ export interface ReportDetail {
   competencyGroups?: CompetencyGroupScore[];
   /** interest 전용: 흥미/직업 Holland 프로파일 */
   interestProfiles?: { interest: HollandProfile[]; job: HollandProfile[] };
+  /** interest 전용: 설문 성실도 (sincerity, 5점 만점) */
+  interestSincerity?: number;
+  /** interest 전용: 긍정응답률 (choiceratio1~5) */
+  interestChoiceRatios?: Array<{ label: string; ratio: number }>;
+  /** interest 전용: 선호직업 백분위 (Part 2) */
+  jobPercentiles?: Array<{ code: string; name: string; occupation: string[]; percentile: number }>;
+  /** interest 전용: 일반흥미-선호직업군 일치정도 */
+  interestCongruence?: { level: string; description: string };
+  /** interest 전용: 진로활동 방법 추천 */
+  careerActivities?: string[];
   /** values 전용: 상위 카테고리 + 하위 차원 */
   valuesHierarchy?: { uppers: ValuesUpper[]; subDimensions: ValuesSubDim[] };
+  /** values 전용: 4개 가치지향 유형 (직업 포함) */
+  valuesOrientations?: ValuesOrientation[];
   /** maturity 전용: 태도/능력/진로행동/시험불안 집계 */
   maturityAggregates?: Record<string, AggregateScore>;
   /** maturity 전용: 응답 일관성 */

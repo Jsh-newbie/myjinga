@@ -481,6 +481,32 @@ a {
   padding: 16px 0;
 }
 
+.ct-error {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--ink-light, #71717a);
+}
+
+.ct-error p {
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.ct-error button {
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--brand-700, #1a3a2a);
+  background: white;
+  color: var(--brand-700, #1a3a2a);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ct-error button:active {
+  background: #f4f4f5;
+}
+
 /* Swipe-to-delete container */
 .ct-swipe-container {
   position: relative;
@@ -1182,6 +1208,46 @@ a {
   margin: 0;
 }
 
+/* 재검사 필요 뱃지 */
+.ctr-retest-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+}
+.ctr-retest-badge-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 50%;
+}
+.ctr-retest-badge-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ctr-retest-badge-content strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #dc2626;
+}
+.ctr-retest-badge-content span {
+  font-size: 12px;
+  color: #7f1d1d;
+  line-height: 1.5;
+}
+
 .ctr-report-card {
   background: white;
   border: 1px solid #e4e4e7;
@@ -1250,6 +1316,21 @@ a {
 
 .ctr-action-card span:nth-child(2) {
   flex: 1;
+}
+
+.ctr-action-card--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: default;
+}
+
+.ctr-badge-soon {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--muted, #e4e4e7);
+  color: var(--ink-light, #71717a);
+  white-space: nowrap;
 }
 
 .ctr-empty {
@@ -1419,6 +1500,8 @@ a {
 .ctr-td-name {
   font-weight: 600;
   text-align: left !important;
+  white-space: nowrap;
+  width: 1%;
 }
 
 .ctr-td-score {
@@ -1473,6 +1556,268 @@ a {
   margin-top: 2px;
   line-height: 1.3;
 }
+
+/* === Aptitude - PDF Style === */
+
+/* 5-block level indicator */
+.ctr-level-blocks {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  color: #71717a;
+}
+
+.ctr-level-block {
+  width: 18px;
+  height: 8px;
+  border-radius: 2px;
+  background: #e4e4e7;
+}
+
+.ctr-level-block--filled.ctr-grade--5 { background: var(--brand-500); }
+.ctr-level-block--filled.ctr-grade--4 { background: var(--brand-400, #60a5fa); }
+.ctr-level-block--filled.ctr-grade--3 { background: #fbbf24; }
+.ctr-level-block--filled.ctr-grade--2 { background: #fb923c; }
+.ctr-level-block--filled.ctr-grade--1 { background: #f87171; }
+
+/* Summary (Top 3 종합평가) */
+.ctr-apt-summary-list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.ctr-apt-summary-item {
+  flex: 1;
+  min-width: 140px;
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.ctr-apt-summary-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.ctr-apt-summary-desc {
+  font-size: 13px;
+  color: #52525b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Level legend (5단계 범례) */
+.ctr-apt-level-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f4f4f5;
+  font-size: 12px;
+  color: #71717a;
+}
+
+.ctr-apt-level-legend-label {
+  font-weight: 600;
+  color: #3f3f46;
+}
+
+.ctr-apt-level-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ctr-apt-level-legend-item .ctr-level-block {
+  width: 14px;
+  height: 7px;
+}
+
+/* Detail cards (영역별 상세) */
+.ctr-apt-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ctr-apt-detail-card {
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ctr-apt-detail-top {
+  padding: 0;
+}
+
+.ctr-apt-detail-top-row {
+  display: grid;
+  grid-template-columns: 100px 80px 120px 1fr;
+  align-items: center;
+  padding: 10px 16px;
+  font-size: 13px;
+  gap: 8px;
+}
+
+.ctr-apt-detail-top-row:first-child {
+  background: #f4f4f5;
+  font-weight: 600;
+  color: #52525b;
+  font-size: 12px;
+}
+
+.ctr-apt-detail-top-data {
+  border-bottom: 1px solid #f4f4f5;
+}
+
+.ctr-apt-detail-name {
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.ctr-apt-detail-pct {
+  font-weight: 700;
+  color: var(--brand-700);
+  text-align: center;
+}
+
+.ctr-apt-detail-lvl {
+  display: flex;
+  justify-content: center;
+}
+
+.ctr-apt-detail-desc {
+  font-size: 13px;
+  color: #52525b;
+  line-height: 1.5;
+}
+
+.ctr-apt-detail-area,
+.ctr-apt-detail-pct-label,
+.ctr-apt-detail-lvl-label,
+.ctr-apt-detail-desc-label {
+  text-align: center;
+}
+
+.ctr-apt-detail-area { text-align: left; }
+.ctr-apt-detail-desc-label { text-align: left; }
+
+/* Methods (강화/보완방법) */
+.ctr-apt-detail-methods {
+  padding: 14px 16px;
+}
+
+.ctr-apt-detail-methods strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3f3f46;
+  margin-bottom: 8px;
+}
+
+.ctr-apt-detail-methods-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 24px;
+}
+
+.ctr-apt-detail-method {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  color: #52525b;
+  line-height: 1.6;
+}
+
+.ctr-apt-detail-method-bullet {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a1a1aa;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+/* Mobile responsive for aptitude detail */
+@media (max-width: 600px) {
+  .ctr-apt-summary-list {
+    flex-direction: column;
+  }
+  .ctr-apt-detail-top-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .ctr-apt-detail-top-row:first-child {
+    display: none;
+  }
+  .ctr-apt-detail-name::before { content: '영역: '; font-weight: 400; font-size: 12px; color: #71717a; }
+  .ctr-apt-detail-pct::before { content: '백분위 '; font-weight: 400; font-size: 12px; color: #71717a; }
+  .ctr-apt-detail-methods-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Job group sections (적성별 세부직업군) */
+.ctr-apt-jobgroup-section {
+  margin-bottom: 20px;
+}
+
+.ctr-apt-jobgroup-section:last-child {
+  margin-bottom: 0;
+}
+
+.ctr-apt-jobgroup-header {
+  background: #f4f4f5;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3f3f46;
+  text-align: center;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid #e4e4e7;
+  border-bottom: none;
+}
+
+.ctr-apt-jobgroup-desc {
+  font-size: 13px;
+  color: #52525b;
+  line-height: 1.6;
+  margin: 0;
+  padding: 10px 16px;
+  border: 1px dashed #d4d4d8;
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 12px;
+}
+
+.ctr-apt-jobgroup-section .ctr-table-wrap {
+  margin-top: 0;
+}
+
+.ctr-apt-jobgroup-section .ctr-table {
+  border-top: none;
+}
+
+.ctr-apt-jobgroup-fallback {
+  font-size: 13px;
+  color: #52525b;
+  line-height: 1.6;
+  padding: 10px 16px;
+  border: 1px solid #e4e4e7;
+  border-radius: 0 0 8px 8px;
+}
+
+/* === End Aptitude PDF Style === */
 
 /* Recommend sections */
 .ctr-recommend {
@@ -1595,6 +1940,11 @@ a {
   font-size: 10px;
   fill: #52525b;
   font-weight: 500;
+}
+.ctr-radar-label-score {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--brand-700);
 }
 
 .ctr-radar-legend {
@@ -1786,13 +2136,279 @@ a {
   display: block;
 }
 
-/* Aggregate Grid (maturity) */
-.ctr-agg-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* Main Result Cards (maturity 주요 결과) */
+.ctr-main-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ctr-main-result-card {
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.ctr-main-result--high {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+.ctr-main-result--low {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+.ctr-main-result-badge {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.ctr-main-result--high .ctr-main-result-badge {
+  color: #16a34a;
+}
+.ctr-main-result--low .ctr-main-result-badge {
+  color: #dc2626;
+}
+.ctr-main-result-items {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
+.ctr-main-result-tag {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+}
+.ctr-main-result--high .ctr-main-result-tag {
+  color: #15803d;
+}
+.ctr-main-result--low .ctr-main-result-tag {
+  color: #b91c1c;
+}
 
+/* Holland Interest Cards */
+.ctr-holland-top2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 500px) {
+  .ctr-holland-top2 { grid-template-columns: 1fr; }
+}
+.ctr-holland-card {
+  background: var(--surface, #fafafa);
+  border: 1px solid var(--border, #f0f0f0);
+  border-radius: 14px;
+  padding: 16px;
+}
+.ctr-holland-rank {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-700, #15803d);
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border, #f0f0f0);
+  margin-bottom: 12px;
+}
+.ctr-holland-type {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.ctr-holland-code {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink, #18181b);
+  line-height: 1;
+}
+.ctr-holland-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-light, #52525b);
+}
+.ctr-holland-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.ctr-holland-trait {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--brand-50, #f0fdf4);
+  color: var(--brand-700, #15803d);
+  font-weight: 500;
+}
+.ctr-holland-comments {
+  font-size: 13px;
+  color: var(--ink-light, #52525b);
+  line-height: 1.6;
+  margin: 0 0 12px;
+  padding-left: 16px;
+}
+.ctr-holland-comments li {
+  margin-bottom: 2px;
+}
+.ctr-holland-occupation {
+  font-size: 13px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border, #f0f0f0);
+}
+.ctr-holland-occupation strong {
+  color: var(--brand-700, #15803d);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.ctr-holland-occupation span {
+  color: var(--ink-light, #52525b);
+}
+
+/* Holland Job Table */
+.ctr-holland-job-table {
+  border: 1px solid var(--border, #e4e4e7);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.ctr-holland-job-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  background: var(--brand-50, #f0fdf4);
+  font-weight: 700;
+  color: var(--ink, #18181b);
+  text-align: center;
+}
+.ctr-holland-job-header span {
+  padding: 10px 8px;
+  border-right: 1px solid var(--border, #e4e4e7);
+}
+.ctr-holland-job-header span:last-child {
+  border-right: none;
+}
+.ctr-holland-job-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  border-top: 1px solid var(--border, #e4e4e7);
+}
+.ctr-holland-job-row span {
+  padding: 10px 8px;
+  border-right: 1px solid var(--border, #e4e4e7);
+  color: var(--ink-light, #52525b);
+  line-height: 1.5;
+}
+.ctr-holland-job-row span:last-child {
+  border-right: none;
+}
+.ctr-holland-job-label {
+  font-weight: 600;
+  color: var(--ink, #18181b) !important;
+  background: var(--surface, #fafafa);
+  text-align: center;
+}
+.ctr-holland-note {
+  font-size: 11px;
+  color: #ef4444;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+/* Interest Chart Footer */
+.ctr-interest-footer {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ctr-hexagon-guide-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink, #18181b);
+  margin: 0 0 10px;
+}
+.ctr-hexagon-table {
+  border: 1px solid var(--border, #e4e4e7);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ctr-hexagon-header {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  background: var(--brand-50, #f0fdf4);
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink, #18181b);
+}
+.ctr-hexagon-header span {
+  padding: 8px 6px;
+  border-right: 1px solid var(--border, #e4e4e7);
+}
+.ctr-hexagon-header span:last-child { border-right: none; }
+.ctr-hexagon-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  border-top: 1px solid var(--border, #e4e4e7);
+}
+.ctr-hexagon-row span {
+  padding: 10px 8px;
+  border-right: 1px solid var(--border, #e4e4e7);
+  color: var(--ink-light, #52525b);
+}
+.ctr-hexagon-row span:last-child { border-right: none; }
+.ctr-hexagon-label {
+  font-weight: 700;
+  color: var(--ink, #18181b) !important;
+  background: var(--surface, #fafafa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ctr-interest-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+}
+@media (max-width: 500px) {
+  .ctr-interest-stats { grid-template-columns: 1fr; }
+}
+.ctr-interest-stat-card {
+  border: 1px solid var(--border, #e4e4e7);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.ctr-interest-stat-label {
+  display: block;
+  background: var(--brand-50, #f0fdf4);
+  font-weight: 700;
+  text-align: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, #e4e4e7);
+  color: var(--ink, #18181b);
+}
+.ctr-interest-stat-value {
+  display: block;
+  padding: 10px 12px;
+  text-align: center;
+  color: var(--ink-light, #52525b);
+  font-weight: 600;
+}
+.ctr-interest-ratios {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  color: var(--ink-light, #52525b);
+}
+.ctr-interest-ratios span {
+  font-size: 13px;
+}
+
+/* Aggregate Grid (maturity) */
 .ctr-agg-item {
   background: #f4f4f5;
   border-radius: 10px;
@@ -1869,10 +2485,924 @@ a {
   vertical-align: middle;
 }
 
+/* --- Competency: 4사분면 유형 --- */
+.ctr-competency-quadrant {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ctr-quadrant-item {
+  background: #f8f9fa;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.ctr-quadrant-item strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #71717a;
+  margin-bottom: 4px;
+}
+.ctr-quadrant-item span {
+  font-size: 11px;
+  color: #a1a1aa;
+}
+.ctr-quadrant-item--active {
+  background: linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%);
+  border-color: var(--brand-700);
+}
+.ctr-quadrant-item--active strong {
+  color: white;
+}
+.ctr-quadrant-item--active span {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Competency: 유형 설명 */
+.ctr-competency-type-desc {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+.ctr-competency-type-desc p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #555;
+  margin: 0;
+}
+
+/* Competency: 점수 범례 */
+.ctr-competency-score-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.ctr-score-legend-item {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ctr-score-legend-item::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.ctr-score-legend--low::before { background: #94a3b8; }
+.ctr-score-legend--mid::before { background: #f59e0b; }
+.ctr-score-legend--high::before { background: #ef4444; }
+
+/* Competency: 점수 테이블 (진로설계/진로준비 나란히) */
+.ctr-competency-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .ctr-competency-table {
+    grid-template-columns: 1fr;
+  }
+}
+.ctr-competency-table-col {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ctr-competency-table-header {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.ctr-competency-table-header--design {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.ctr-competency-table-header--ready {
+  background: #fef3c7;
+  color: #b45309;
+}
+.ctr-maturity-table-header--career {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+/* Maturity: 3-column layout */
+.ctr-maturity-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+}
+.ctr-maturity-cols > .ctr-competency-table-col:last-child {
+  min-width: 140px;
+}
+@media (max-width: 600px) {
+  .ctr-maturity-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.ctr-competency-table-subheader {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #71717a;
+  background: #f8f9fa;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ctr-competency-table-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.ctr-competency-table-row:last-child { border-bottom: none; }
+.ctr-competency-score {
+  font-weight: 700;
+  font-size: 14px;
+}
+.ctr-competency-score--high { color: #ef4444; }
+.ctr-competency-score--mid { color: #f59e0b; }
+.ctr-competency-score--low { color: #94a3b8; }
+
+/* Competency: 상세 결과 카드 */
+.ctr-competency-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+.ctr-competency-detail-card {
+  background: var(--surface);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ctr-competency-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ctr-competency-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ctr-competency-detail-category {
+  font-size: 10px;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+}
+.ctr-competency-detail-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ctr-competency-detail-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ctr-competency-detail-score {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--brand-700);
+}
+.ctr-competency-detail-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #666;
+  padding: 12px 16px 0;
+  margin: 0;
+}
+.ctr-competency-detail-result {
+  padding: 12px 16px;
+}
+.ctr-competency-detail-result strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.ctr-competency-detail-result p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #555;
+  margin: 0;
+}
+.ctr-competency-detail-tips {
+  background: #f0f9ff;
+  padding: 14px 16px;
+  border-top: 1px solid #e0f2fe;
+}
+.ctr-competency-detail-tips strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0369a1;
+  margin-bottom: 8px;
+}
+.ctr-competency-detail-tips ol {
+  margin: 0;
+  padding: 0 0 0 20px;
+}
+.ctr-competency-detail-tips li {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #555;
+  margin-bottom: 4px;
+  white-space: pre-line;
+}
+.ctr-competency-detail-tips li:last-child { margin-bottom: 0; }
+
+/* Competency: 해석 유의사항 */
+.ctr-competency-caution {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 16px;
+}
+.ctr-competency-caution p {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+.ctr-competency-caution ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+.ctr-competency-caution li {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #555;
+  margin-bottom: 4px;
+}
+.ctr-competency-caution li:last-child { margin-bottom: 0; }
+
+/* --- Maturity: 9가지 영역별 점수 테이블 (PDF 원본) --- */
+.ctr-maturity-score-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.ctr-maturity-score-header {
+  background: #f4f6f8;
+  font-weight: 700;
+  color: #374151;
+}
+.ctr-maturity-score-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr 3fr 2fr 3fr 2fr;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ctr-maturity-score-row:last-child { border-bottom: none; }
+.ctr-maturity-score-row > span {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-right: 1px solid #f0f0f0;
+}
+.ctr-maturity-score-row > span:last-child { border-right: none; }
+.ctr-maturity-score-name { font-weight: 500; color: #374151; word-break: keep-all; font-size: 12px; }
+.ctr-maturity-score-val { font-weight: 700; color: var(--brand-700, #15803d); font-size: 13px; }
+
+/* Maturity note */
+.ctr-maturity-note {
+  font-size: 11px;
+  color: #a1a1aa;
+  margin: 10px 0 0;
+  line-height: 1.8;
+}
+
+/* --- Maturity: 응답 일관성 테이블 --- */
+.ctr-maturity-consistency-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.ctr-maturity-consistency-header {
+  display: grid;
+  grid-template-columns: 100px 80px 1fr;
+  background: #f4f6f8;
+  font-weight: 700;
+  color: #374151;
+}
+.ctr-maturity-consistency-header > span {
+  padding: 10px 12px;
+  text-align: center;
+  border-right: 1px solid #f0f0f0;
+}
+.ctr-maturity-consistency-header > span:last-child { border-right: none; }
+.ctr-maturity-consistency-row {
+  display: grid;
+  grid-template-columns: 100px 80px 1fr;
+}
+.ctr-maturity-consistency-row > span {
+  padding: 10px 12px;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+}
+.ctr-maturity-consistency-row > span:last-child { border-right: none; }
+.ctr-maturity-consistency-label { font-weight: 600; color: #374151; justify-content: center; }
+.ctr-maturity-consistency-level { font-weight: 700; color: var(--brand-700, #15803d); justify-content: center; }
+.ctr-maturity-consistency-desc { font-size: 12px; color: #555; line-height: 1.6; }
+
+/* --- Maturity: 태도-능력차원별 결과해석 테이블 --- */
+.ctr-maturity-dim-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.ctr-maturity-dim-table-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  background: #f4f6f8;
+  font-weight: 700;
+  color: #374151;
+}
+.ctr-maturity-dim-table-header > span {
+  padding: 10px 12px;
+  text-align: center;
+  border-right: 1px solid #f0f0f0;
+}
+.ctr-maturity-dim-table-header > span:last-child { border-right: none; }
+.ctr-maturity-dim-table-header em {
+  display: block;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--brand-700, #15803d);
+  margin-top: 4px;
+}
+.ctr-maturity-dim-table-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  border-top: 1px solid #f0f0f0;
+}
+.ctr-maturity-dim-table-row > span {
+  padding: 10px 12px;
+  border-right: 1px solid #f0f0f0;
+}
+.ctr-maturity-dim-table-row > span:last-child { border-right: none; }
+.ctr-maturity-dim-table-label {
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ctr-maturity-dim-table-realms {
+  font-size: 12px;
+  color: var(--brand-700, #15803d);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.ctr-maturity-dim-table-interp {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.7;
+}
+
+/* --- Maturity: 레이더 차트 영역 --- */
+.ctr-maturity-radar-section {
+  margin: 16px 0;
+}
+.ctr-radar-legend--attitude::before {
+  background: rgba(255, 140, 140, 0.6);
+}
+.ctr-radar-legend--ability::before {
+  background: rgba(140, 180, 255, 0.6);
+}
+
+/* --- Maturity: 행동차원 바 --- */
+.ctr-maturity-career-bar {
+  margin: 16px 0;
+  padding: 14px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+}
+.ctr-maturity-career-bar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ctr-maturity-career-bar-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  min-width: 90px;
+  line-height: 1.4;
+}
+.ctr-maturity-career-bar-track {
+  flex: 1;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  position: relative;
+  overflow: visible;
+}
+.ctr-maturity-career-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.ctr-maturity-career-bar-markers {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  right: 0;
+  height: 0;
+}
+.ctr-maturity-career-bar-markers > span {
+  position: absolute;
+  font-size: 10px;
+  color: #9ca3af;
+  transform: translateX(-50%);
+}
+.ctr-maturity-career-bar-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-700, #15803d);
+  min-width: 60px;
+  text-align: right;
+}
+
+/* --- Maturity: 수준 범례 --- */
+.ctr-maturity-level-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+  font-size: 12px;
+  color: #71717a;
+}
+.ctr-maturity-level-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ctr-maturity-level-legend-item::before {
+  content: '';
+  display: inline-block;
+  width: 28px;
+  height: 10px;
+  border-radius: 2px;
+}
+.ctr-maturity-level--high::before {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+}
+.ctr-maturity-level--mid::before {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  opacity: 0.6;
+}
+.ctr-maturity-level--low::before {
+  background: #d4d4d8;
+}
+
+/* --- Maturity: 하위영역별 상세 카드 --- */
+.ctr-maturity-detail-group {
+  margin-top: 16px;
+}
+.ctr-maturity-detail-card {
+  background: var(--surface, #fff);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.ctr-maturity-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ctr-maturity-detail-dim {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--brand-700, #15803d);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.ctr-maturity-detail-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #18181b);
+}
+.ctr-maturity-detail-score {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-700, #15803d);
+  margin-left: auto;
+}
+.ctr-maturity-detail-desc {
+  font-size: 12px;
+  color: #71717a;
+  line-height: 1.6;
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ctr-maturity-detail-interp {
+  margin-bottom: 10px;
+}
+.ctr-maturity-detail-interp strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  display: block;
+  margin-bottom: 6px;
+}
+.ctr-maturity-detail-interp p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.8;
+  margin: 0;
+}
+.ctr-maturity-detail-tips {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+.ctr-maturity-detail-tips strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  display: block;
+  margin-bottom: 6px;
+}
+.ctr-maturity-detail-tips ol {
+  margin: 0;
+  padding: 0 0 0 18px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.8;
+}
+.ctr-maturity-detail-tips li { margin-bottom: 4px; }
+.ctr-maturity-detail-tips li:last-child { margin-bottom: 0; }
+
 /* SubDim list (values) */
 .ctr-subdim-list {
   display: flex;
   flex-direction: column;
+}
+
+/* --- Interest: 검사 설명 --- */
+.ctr-test-intro {
+  background: var(--surface);
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.ctr-test-intro-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand-700);
+  margin: 0 0 10px;
+}
+.ctr-test-intro p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.8;
+  margin: 0 0 10px;
+}
+.ctr-test-intro p:last-of-type {
+  margin-bottom: 0;
+}
+.ctr-test-intro-diff {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+}
+.ctr-test-intro-diff h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.ctr-test-intro-diff ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+.ctr-test-intro-diff li {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 6px;
+}
+.ctr-test-intro-diff li:last-child {
+  margin-bottom: 0;
+}
+.ctr-test-intro-diff li strong {
+  color: var(--brand-700);
+}
+
+/* --- Interest: 섹션 설명 --- */
+.ctr-section-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+/* --- Interest: T점수 테이블 --- */
+.ctr-interest-score-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 12px 0 0;
+}
+.ctr-interest-score-header,
+.ctr-interest-score-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  text-align: center;
+}
+.ctr-interest-score-header {
+  background: #f0f4f2;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ctr-interest-score-header span,
+.ctr-interest-score-row span {
+  padding: 8px 4px;
+  border-right: 1px solid #e5e7eb;
+}
+.ctr-interest-score-header span:last-child,
+.ctr-interest-score-row span:last-child {
+  border-right: none;
+}
+.ctr-interest-score-row {
+  font-size: 13px;
+  font-weight: 500;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* --- Interest: Holland 6유형 그리드 --- */
+.ctr-holland-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 480px) {
+  .ctr-holland-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.ctr-holland-type-card {
+  background: var(--surface);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.ctr-holland-type-card--active {
+  border-color: var(--brand-500);
+  background: #f0faf5;
+}
+.ctr-holland-type-rank {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--brand-500);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.ctr-holland-type-code {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--brand-700);
+}
+.ctr-holland-type-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 2px 0;
+}
+.ctr-holland-type-eng {
+  font-size: 10px;
+  color: #999;
+  margin-bottom: 8px;
+}
+.ctr-holland-type-traits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.ctr-holland-type-score {
+  font-size: 11px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* --- Interest: 직업 정보 카드 --- */
+.ctr-job-info-card {
+  background: var(--surface);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.ctr-job-info-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ctr-job-info-header strong {
+  font-size: 16px;
+  display: block;
+}
+.ctr-job-info-rank {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-500);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ctr-job-info-occupation {
+  font-size: 12px;
+  color: var(--brand-500);
+  font-weight: 600;
+}
+.ctr-job-info-section {
+  margin-top: 10px;
+}
+.ctr-job-info-section strong {
+  font-size: 13px;
+  color: var(--brand-700);
+  display: block;
+  margin-bottom: 4px;
+}
+.ctr-job-info-section p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* --- Interest: 선호직업 백분위 바 차트 --- */
+.ctr-job-percentile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ctr-job-percentile-row {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.ctr-job-percentile-type {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ctr-job-percentile-type strong {
+  font-size: 14px;
+}
+.ctr-job-percentile-occ {
+  font-size: 11px;
+  color: #888;
+}
+.ctr-job-percentile-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ctr-job-percentile-bar {
+  flex: 1;
+  height: 14px;
+  background: #f0f0f0;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.ctr-job-percentile-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 7px;
+  transition: width 0.4s ease;
+}
+.ctr-job-percentile-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 50px;
+  text-align: right;
+}
+
+/* --- Interest: 일치정도 카드 --- */
+.ctr-congruence-card {
+  background: var(--surface);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+  text-align: center;
+}
+.ctr-congruence-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.ctr-congruence-label {
+  font-size: 12px;
+  color: #888;
+}
+.ctr-congruence-level {
+  font-size: 20px;
+}
+.ctr-congruence--match {
+  color: var(--brand-500);
+}
+.ctr-congruence--mismatch {
+  color: var(--accent);
+}
+.ctr-congruence-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  text-align: left;
+  margin: 0;
+}
+
+/* --- Interest: 진로활동 방법 --- */
+.ctr-career-activities {
+  background: #f8fbfa;
+  border-radius: 12px;
+  padding: 20px;
+}
+.ctr-career-activities-intro {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-700);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.ctr-career-activities-list {
+  margin: 0;
+  padding: 0 0 0 20px;
+}
+.ctr-career-activities-list li {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #444;
+  margin-bottom: 8px;
+}
+.ctr-career-activities-list li::marker {
+  color: var(--brand-500);
+}
+.ctr-career-activities-note {
+  font-size: 11px;
+  color: var(--accent);
+  line-height: 1.6;
+  margin: 12px 0 0;
 }
 
 /* ======================
@@ -2047,6 +3577,25 @@ a {
   background: white;
 }
 
+.pf-birth-picker {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr 0.9fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.pf-birth-select {
+  margin-bottom: 0;
+}
+select.pf-input {
+  font-size: 16px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
 .pf-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2056,6 +3605,81 @@ a {
 .pf-col {
   display: flex;
   flex-direction: column;
+}
+
+/* Custom Select Button (mobile-friendly) */
+.pf-select-btn {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d4d4d8;
+  font-size: 15px;
+  color: var(--ink);
+  background: #fafafa;
+  margin-bottom: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.pf-select-btn:active {
+  border-color: var(--brand-500);
+  background: white;
+}
+.pf-select-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: pf-fade-in 0.15s;
+}
+@keyframes pf-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.pf-select-sheet {
+  width: 100%;
+  max-width: 560px;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 8px 0 env(safe-area-inset-bottom, 16px);
+  animation: pf-slide-up 0.2s ease-out;
+}
+@keyframes pf-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.pf-select-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: #d4d4d8;
+  margin: 6px auto 12px;
+}
+.pf-select-option {
+  width: 100%;
+  padding: 16px 24px;
+  border: none;
+  background: none;
+  font-size: 16px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pf-select-option:active {
+  background: #f4f4f5;
+}
+.pf-select-option--active {
+  font-weight: 600;
+  color: var(--brand-700);
 }
 
 /* Interest Tags */
@@ -2422,4 +4046,728 @@ a {
   font-size: 13px;
   font-weight: 600;
   margin: 8px 0 0;
+}
+
+/* --- 공통: 직업명 뱃지 --- */
+.ctr-job-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.ctr-job-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f0f4f2;
+  border: 1px solid #dce5df;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ctr-job-badge--clickable {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+.ctr-job-badge--clickable:hover {
+  background: var(--brand-100);
+  border-color: var(--brand-500);
+  box-shadow: 0 1px 4px rgba(45, 122, 90, 0.15);
+}
+.ctr-job-badge--clickable:active {
+  transform: scale(0.97);
+}
+.ctr-job-badge--more {
+  cursor: pointer;
+  background: var(--brand-500);
+  color: #fff;
+  border-color: var(--brand-500);
+  font-family: inherit;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.ctr-job-badge--more:hover {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+}
+
+/* --- Values: 검사 설명 보충 --- */
+.ctr-test-intro-note {
+  font-size: 12px !important;
+  color: #888 !important;
+  margin-top: 6px !important;
+}
+
+/* --- Values: 검사결과 요약 --- */
+.ctr-values-summary {
+  display: flex;
+  gap: 16px;
+}
+.ctr-values-summary-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: var(--surface);
+}
+.ctr-values-summary-icon {
+  font-size: 28px;
+}
+.ctr-values-summary-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+  line-height: 1.5;
+}
+.ctr-values-summary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.ctr-values-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* --- Values: 12가지 점수 테이블 --- */
+.ctr-values-score-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ctr-values-score-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: #f0f4f2;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  text-align: center;
+}
+.ctr-values-score-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 10px 14px;
+  font-size: 13px;
+  text-align: center;
+  border-top: 1px solid #f0f0f0;
+}
+.ctr-values-score-row:nth-child(even) {
+  background: #fafbfc;
+}
+.ctr-values-score-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+.ctr-values-score-avg {
+  color: var(--brand-500);
+  font-weight: 500;
+}
+.ctr-values-score-val {
+  font-weight: 700;
+  color: var(--ink);
+}
+/* dual 6열 레이아웃 (PDF: 좌3열 + 우3열) */
+.ctr-values-score-table--dual .ctr-values-score-header,
+.ctr-values-score-table--dual .ctr-values-score-row {
+  grid-template-columns: 1.2fr 1fr 0.8fr 1.2fr 1fr 0.8fr;
+}
+.ctr-values-score-table--dual .ctr-values-score-header span:nth-child(4),
+.ctr-values-score-table--dual .ctr-values-score-row span:nth-child(4) {
+  border-left: 1px solid #e5e7eb;
+  padding-left: 12px;
+}
+
+/* --- Values: 가치지향 유형 테이블 --- */
+.ctr-values-orient-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ctr-values-orient-header {
+  display: grid;
+  grid-template-columns: 80px 100px 1fr;
+  background: #f0f4f2;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+}
+.ctr-values-orient-row {
+  display: grid;
+  grid-template-columns: 80px 100px 1fr;
+  padding: 12px 14px;
+  font-size: 13px;
+  border-top: 1px solid #f0f0f0;
+  gap: 4px;
+}
+.ctr-values-orient-row--active {
+  background: #f0f9f4;
+  border-left: 3px solid var(--brand-500);
+}
+.ctr-values-orient-name {
+  font-weight: 700;
+  color: var(--ink);
+}
+.ctr-values-orient-subs {
+  font-size: 12px;
+  color: var(--brand-700);
+  font-weight: 500;
+}
+.ctr-values-orient-desc {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* --- Values: 점수 비교 바 차트 --- */
+.ctr-values-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ctr-values-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ctr-values-bar-label {
+  width: 80px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  flex-shrink: 0;
+}
+.ctr-values-bar-tracks {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ctr-values-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctr-values-bar-track {
+  flex: 1;
+  height: 14px;
+  background: #edf1ee;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.ctr-values-bar-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.5s ease;
+}
+.ctr-values-bar-fill--user {
+  background: var(--accent);
+}
+.ctr-values-bar-fill--avg {
+  background: #b0c4b8;
+}
+.ctr-values-bar-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  min-width: 32px;
+}
+.ctr-values-bar-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+.ctr-values-legend-item {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ctr-values-legend-item::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.ctr-values-legend--user::before {
+  background: var(--accent);
+}
+.ctr-values-legend--avg::before {
+  background: #b0c4b8;
+}
+
+/* --- Values: 가치관 설명 목록 --- */
+.ctr-values-desc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ctr-values-desc-item {
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: var(--surface);
+}
+.ctr-values-desc-name {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-700);
+  margin-bottom: 4px;
+}
+.ctr-values-desc-name::before {
+  content: '●';
+  margin-right: 6px;
+  font-size: 8px;
+  vertical-align: middle;
+}
+.ctr-values-desc-text {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* --- Values: 가치지향 유형 바 차트 --- */
+.ctr-values-orient-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.ctr-values-orient-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ctr-values-orient-bar-label {
+  width: 70px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  flex-shrink: 0;
+}
+.ctr-values-orient-bar-track {
+  flex: 1;
+  height: 24px;
+  background: #edf1ee;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.ctr-values-orient-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  opacity: 0.7;
+}
+.ctr-values-orient-bar-fill--active {
+  background: var(--brand-500);
+  opacity: 1;
+}
+.ctr-values-orient-bar-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 30px;
+}
+
+/* --- Values: 관련 직업명 --- */
+.ctr-values-jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ctr-values-jobs-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ctr-values-jobs-header {
+  background: #f0f4f2;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+}
+.ctr-values-jobs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 14px 16px;
+}
+.ctr-values-job-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f0f4f2;
+  border: 1px solid #dce5df;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+.ctr-values-job-tag:hover {
+  background: var(--brand-100);
+  border-color: var(--brand-500);
+  box-shadow: 0 1px 4px rgba(45, 122, 90, 0.15);
+}
+
+/* --- Values: 반응형 --- */
+@media (max-width: 480px) {
+  .ctr-values-orient-header,
+  .ctr-values-orient-row {
+    grid-template-columns: 60px 80px 1fr;
+    font-size: 11px;
+  }
+  .ctr-values-bar-label {
+    width: 60px;
+    font-size: 11px;
+  }
+  .ctr-values-orient-bar-label {
+    width: 55px;
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   직업 상세 모달
+   ============================================ */
+.ctr-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: ctr-modal-fade-in 0.2s ease;
+}
+@keyframes ctr-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ctr-modal {
+  background: var(--surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  animation: ctr-modal-slide-up 0.25s ease;
+}
+@keyframes ctr-modal-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.ctr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+.ctr-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ctr-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+  padding: 0 4px;
+  line-height: 1;
+  font-family: inherit;
+}
+.ctr-modal-close:hover {
+  color: var(--ink);
+}
+.ctr-modal-body {
+  overflow-y: auto;
+  padding: 16px 20px;
+  flex: 1;
+}
+.ctr-modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 0;
+  color: #888;
+  font-size: 13px;
+}
+.ctr-modal-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #eee;
+  border-top-color: var(--brand-500);
+  border-radius: 50%;
+  animation: ctr-spin 0.7s linear infinite;
+}
+@keyframes ctr-spin {
+  to { transform: rotate(360deg); }
+}
+.ctr-modal-error {
+  text-align: center;
+  padding: 24px 0;
+  color: #888;
+  font-size: 13px;
+}
+.ctr-modal-section {
+  margin-bottom: 16px;
+}
+.ctr-modal-section h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-700);
+}
+.ctr-modal-work-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #444;
+}
+.ctr-modal-work-list li {
+  margin-bottom: 4px;
+}
+.ctr-modal-empty {
+  font-size: 13px;
+  color: #999;
+}
+.ctr-modal-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.ctr-modal-stat {
+  flex: 1;
+  min-width: 100px;
+  background: #f7f9f8;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.ctr-modal-stat-label {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+}
+.ctr-modal-stat-value {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--brand-700);
+}
+.ctr-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ctr-modal-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 14px;
+  background: #f0f4f2;
+  border: 1px solid #dce5df;
+  font-size: 11px;
+  color: var(--ink);
+}
+.ctr-modal-ready-item {
+  margin-bottom: 10px;
+}
+.ctr-modal-ready-item strong {
+  display: block;
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 4px;
+}
+.ctr-modal-ready-item p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #444;
+}
+.ctr-modal-footer {
+  padding: 12px 20px 16px;
+  border-top: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.ctr-modal-favorite {
+  height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+  color: #bbb;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.ctr-modal-favorite-star {
+  font-size: 20px;
+  line-height: 1;
+}
+.ctr-modal-favorite-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.ctr-modal-favorite:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ctr-modal-favorite--active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.ctr-modal-favorite:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ctr-modal-detail-link {
+  display: inline-block;
+  padding: 10px 24px;
+  background: var(--brand-500);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.ctr-modal-detail-link:hover {
+  background: var(--brand-700);
+  color: #fff;
+}
+.ctr-modal-detail {
+  /* detail wrapper - no special styles needed */
+}
+
+/* Favorites pages */
+.fav-loading {
+  text-align: center;
+  padding: 60px 0;
+  color: #999;
+  font-size: 14px;
+}
+.fav-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+.fav-empty p {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.fav-empty-hint {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: #888 !important;
+}
+.fav-empty-link {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 24px;
+  background: var(--brand-500);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.fav-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+.fav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.fav-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.fav-item-star {
+  color: var(--accent);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.fav-item-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fav-item-remove {
+  border: 1px solid #ddd;
+  background: none;
+  color: #999;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.fav-item-remove:hover {
+  border-color: #f87171;
+  color: #f87171;
+}
+.fav-item-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

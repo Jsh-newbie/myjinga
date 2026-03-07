@@ -23,6 +23,14 @@ service cloud.firestore {
       match /testSessions/{sessionId} {
         allow read, write: if isOwner(uid);
       }
+
+      match /favoriteJobs/{jobId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /favoriteMajors/{majorId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     match /majors/{majorId} {

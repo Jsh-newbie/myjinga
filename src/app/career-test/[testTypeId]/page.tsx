@@ -34,6 +34,7 @@ export default function CareerTestProgressPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [modal, setModal] = useState<ModalState>('none');
@@ -74,6 +75,7 @@ export default function CareerTestProgressPage() {
     if (!user || !isCareerTestTypeId(testTypeId)) return;
 
     async function load() {
+      setLoadError(null);
       try {
         const token = await user!.getIdToken();
 
@@ -98,9 +100,11 @@ export default function CareerTestProgressPage() {
         const qResult = await api.getQuestions(token, testTypeId);
         if (qResult.success) {
           setQuestions(qResult.data.questions);
+        } else {
+          setLoadError('검사 문항을 불러오지 못했습니다. 다시 시도해 주세요.');
         }
       } catch {
-        // silent
+        setLoadError('데이터를 불러오지 못했습니다. 다시 시도해 주세요.');
       } finally {
         setLoading(false);
       }
@@ -247,6 +251,23 @@ export default function CareerTestProgressPage() {
         <div className="ct-loading">
           <div className="main-skeleton" style={{ height: 20, width: '60%', marginBottom: 16, borderRadius: 8 }} />
           <div className="main-skeleton" style={{ height: 200, borderRadius: 14 }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="ctp-page">
+        <header className="ctp-header">
+          <button className="ctp-exit" onClick={() => router.push('/career-test')}>
+            &lsaquo; 나가기
+          </button>
+          <span />
+        </header>
+        <div className="ct-error">
+          <p>{loadError}</p>
+          <button onClick={() => window.location.reload()}>다시 시도</button>
         </div>
       </div>
     );

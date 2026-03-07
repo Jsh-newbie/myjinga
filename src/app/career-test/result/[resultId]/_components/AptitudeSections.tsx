@@ -7,6 +7,7 @@ import {
   type RealmData,
   type ReportDetailData,
 } from './shared';
+import { JobBadgeList } from './JobBadgeList';
 
 export function AptitudeSections({ detail, realms }: { detail: ReportDetailData; realms: RealmData[] }) {
   const sorted = [...realms].sort((a, b) => b.percentile - a.percentile);
@@ -105,7 +106,9 @@ export function AptitudeSections({ detail, realms }: { detail: ReportDetailData;
                         {jobGroups.map((jg) => (
                           <tr key={jg.groupName}>
                             <td className="ctr-td-name">{jg.groupName}</td>
-                            <td style={{ textAlign: 'left' }}>{jg.jobs.map((j) => j.name).join(', ')}</td>
+                            <td style={{ textAlign: 'left' }}>
+                              <JobBadgeList jobs={jg.jobs.map((j) => ({ code: String(j.code), name: j.name }))} />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -113,7 +116,7 @@ export function AptitudeSections({ detail, realms }: { detail: ReportDetailData;
                   </div>
                 ) : (
                   <div className="ctr-apt-jobgroup-fallback">
-                    {interp!.relatedJobs!.map((j) => j.name).join(', ')}
+                    <JobBadgeList jobs={interp!.relatedJobs!} />
                   </div>
                 )}
               </div>

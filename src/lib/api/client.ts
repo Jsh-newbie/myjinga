@@ -136,4 +136,49 @@ export const api = {
       body: { sessionId },
     });
   },
+
+  getJobDetail(token: string, jobCode: number) {
+    return request<{ job: Record<string, unknown> }>(`/api/career-net/jobs?jobCode=${jobCode}`, token);
+  },
+
+  searchJobs(token: string, jobName: string) {
+    return request<{ jobs: Array<{ seq: number; jobCode: number; jobName: string; work: string }>; count: number }>(
+      `/api/career-net/jobs?jobName=${encodeURIComponent(jobName)}`,
+      token,
+    );
+  },
+
+  listFavoriteJobs(token: string) {
+    return request<{ jobs: Array<{ jobCode: string; jobName: string }> }>('/api/career-net/favorite-jobs', token);
+  },
+
+  addFavoriteJob(token: string, jobCode: number, jobName: string) {
+    return request<{ jobCode: string; jobName: string }>('/api/career-net/favorite-jobs', token, {
+      method: 'POST',
+      body: { jobCode, jobName },
+    });
+  },
+
+  removeFavoriteJob(token: string, jobCode: number) {
+    return request<{ deleted: boolean }>(`/api/career-net/favorite-jobs?jobCode=${jobCode}`, token, {
+      method: 'DELETE',
+    });
+  },
+
+  listFavoriteMajors(token: string) {
+    return request<{ majors: Array<{ majorId: string; majorName: string }> }>('/api/career-net/favorite-majors', token);
+  },
+
+  addFavoriteMajor(token: string, majorName: string) {
+    return request<{ majorId: string; majorName: string }>('/api/career-net/favorite-majors', token, {
+      method: 'POST',
+      body: { majorName },
+    });
+  },
+
+  removeFavoriteMajor(token: string, majorId: string) {
+    return request<{ deleted: boolean }>(`/api/career-net/favorite-majors?majorId=${encodeURIComponent(majorId)}`, token, {
+      method: 'DELETE',
+    });
+  },
 };

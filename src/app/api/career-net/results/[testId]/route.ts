@@ -10,9 +10,10 @@ export const runtime = 'nodejs';
 
 export async function GET(
   _request: Request,
-  context: { params: { testId: string } }
+  context: { params: Promise<{ testId: string }> }
 ) {
   try {
+    const { testId } = await context.params;
     const authResult = await verifyBearerToken();
     if (!authResult.ok) {
       return fail(
@@ -22,14 +23,14 @@ export async function GET(
     }
 
     const uid = authResult.decodedToken.uid;
-    const item = await getTestResult(uid, context.params.testId);
+    const item = await getTestResult(uid, testId);
     if (!item) {
       return fail({ code: 'NOT_FOUND', message: '검사 결과를 찾을 수 없습니다.' }, 404);
     }
 
     // reportDetail이 없거나 불완전하면 실시간으로 fetch 후 저장
     // reportDetailFetching 플래그로 동시 요청 시 중복 fetch 방지
-    const needsFetch = !item.reportDetail || (item.reportDetail.schemaVersion ?? 0) < 2;
+    const needsFetch = !item.reportDetail || (item.reportDetail.schemaVersion ?? 0) < 7;
     if (needsFetch && item.resultUrl && !item.reportDetailFetching) {
       const docRef = getAdminDb()
         .collection('users')

@@ -15,6 +15,7 @@ export default function CareerTestPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [results, setResults] = useState<ResultItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const auth = useMemo(() => {
     try {
@@ -40,6 +41,7 @@ export default function CareerTestPage() {
     if (!user) return;
 
     async function load() {
+      setError(null);
       try {
         const token = await user!.getIdToken();
 
@@ -55,7 +57,7 @@ export default function CareerTestPage() {
           setResults(resResult.data.items);
         }
       } catch {
-        // silent
+        setError('데이터를 불러오지 못했습니다. 다시 시도해 주세요.');
       } finally {
         setLoading(false);
       }
@@ -103,6 +105,22 @@ export default function CareerTestPage() {
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="main-skeleton" style={{ height: 80, borderRadius: 14, marginBottom: 10 }} />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="ct-page">
+        <header className="ct-header">
+          <Link href="/dashboard" className="ct-back">&lsaquo;</Link>
+          <span className="ct-header-title">진로 검사</span>
+          <span />
+        </header>
+        <div className="ct-error">
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()}>다시 시도</button>
         </div>
       </div>
     );

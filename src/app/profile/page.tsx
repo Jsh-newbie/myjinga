@@ -426,41 +426,36 @@ export default function ProfilePage() {
         />
 
         <label className="pf-label">생년월일</label>
-        <input
-          className="pf-input"
-          type="date"
-          value={birthDate}
-          onChange={(e) => setBirthDate(e.target.value)}
-        />
+        <BirthDatePicker value={birthDate} onChange={setBirthDate} />
 
         <div className="pf-row">
           <div className="pf-col">
             <label className="pf-label">학교급</label>
-            <select
-              className="pf-input"
-              value={schoolLevel}
-              onChange={(e) => {
-                setSchoolLevel(e.target.value as 'middle' | 'high');
+            <SelectButton
+              value={schoolLevel === 'middle' ? '중학교' : '고등학교'}
+              options={[
+                { value: 'middle', label: '중학교' },
+                { value: 'high', label: '고등학교' },
+              ]}
+              onSelect={(v) => {
+                setSchoolLevel(v as 'middle' | 'high');
                 setSchoolName('');
                 setSchoolQuery('');
                 setSchoolResults([]);
               }}
-            >
-              <option value="middle">중학교</option>
-              <option value="high">고등학교</option>
-            </select>
+            />
           </div>
           <div className="pf-col">
             <label className="pf-label">학년</label>
-            <select
-              className="pf-input"
-              value={grade}
-              onChange={(e) => setGrade(Number(e.target.value) as 1 | 2 | 3)}
-            >
-              <option value={1}>1학년</option>
-              <option value={2}>2학년</option>
-              <option value={3}>3학년</option>
-            </select>
+            <SelectButton
+              value={`${grade}학년`}
+              options={[
+                { value: '1', label: '1학년' },
+                { value: '2', label: '2학년' },
+                { value: '3', label: '3학년' },
+              ]}
+              onSelect={(v) => setGrade(Number(v) as 1 | 2 | 3)}
+            />
           </div>
         </div>
 
@@ -738,5 +733,105 @@ export default function ProfilePage() {
       {/* Recaptcha container (invisible) */}
       <div id="recaptcha-container" />
     </div>
+  );
+}
+
+function BirthDatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parsed = value ? new Date(value) : null;
+  const year = parsed ? parsed.getFullYear() : 0;
+  const month = parsed ? parsed.getMonth() + 1 : 0;
+  const day = parsed ? parsed.getDate() : 0;
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 20 }, (_, i) => currentYear - 10 - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+
+  const daysInMonth = year && month ? new Date(year, month, 0).getDate() : 31;
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  function update(y: number, m: number, d: number) {
+    if (!y || !m || !d) return;
+    const maxDay = new Date(y, m, 0).getDate();
+    const safeDay = Math.min(d, maxDay);
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`;
+    onChange(dateStr);
+  }
+
+  return (
+    <div className="pf-birth-picker">
+      <select
+        className="pf-input pf-birth-select"
+        value={year || ''}
+        onChange={(e) => update(Number(e.target.value), month || 1, day || 1)}
+      >
+        <option value="" disabled>년</option>
+        {years.map((y) => <option key={y} value={y}>{y}년</option>)}
+      </select>
+      <select
+        className="pf-input pf-birth-select"
+        value={month || ''}
+        onChange={(e) => update(year || currentYear - 15, Number(e.target.value), day || 1)}
+      >
+        <option value="" disabled>월</option>
+        {months.map((m) => <option key={m} value={m}>{m}월</option>)}
+      </select>
+      <select
+        className="pf-input pf-birth-select"
+        value={day || ''}
+        onChange={(e) => update(year || currentYear - 15, month || 1, Number(e.target.value))}
+      >
+        <option value="" disabled>일</option>
+        {days.map((d) => <option key={d} value={d}>{d}일</option>)}
+      </select>
+    </div>
+  );
+}
+
+function SelectButton({
+  value,
+  options,
+  onSelect,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onSelect: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="pf-select-btn"
+        onClick={() => setOpen(true)}
+      >
+        <span>{value}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div className="pf-select-overlay" onClick={() => setOpen(false)}>
+          <div className="pf-select-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="pf-select-handle" />
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`pf-select-option${opt.label === value ? ' pf-select-option--active' : ''}`}
+                onClick={() => { onSelect(opt.value); setOpen(false); }}
+              >
+                {opt.label}
+                {opt.label === value && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-700)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

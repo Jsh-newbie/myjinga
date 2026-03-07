@@ -165,6 +165,8 @@ export default function DashboardPage() {
         <QuickItem icon={<RecordIcon />} label="학생부 기록" href="/records" />
         <QuickItem icon={<ExploreIcon />} label="학과 탐색" href="/explore" />
         <QuickItem icon={<AiIcon />} label="AI 도우미" href="/ai" />
+        <QuickItem icon={<FavoriteJobIcon />} label="관심 직업" href="/favorites/jobs" />
+        <QuickItem icon={<FavoriteMajorIcon />} label="관심 학과" href="/favorites/majors" />
       </div>
 
       {/* In-progress test sessions */}
@@ -375,6 +377,25 @@ function AiIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+function FavoriteJobIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+      <line x1="12" y1="12" x2="12" y2="12.01" />
+    </svg>
+  );
+}
+
+function FavoriteMajorIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+      <path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5" />
     </svg>
   );
 }
