@@ -126,10 +126,24 @@
                 </div>
 
                 <!-- Mobile Menu Button -->
-                <button class="md:hidden text-gray-600 p-2" id="mobile-menu-btn">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
+                <button class="md:hidden text-gray-600 p-2" id="mobile-menu-btn" aria-label="메뉴 열기">
+                    <i data-lucide="menu" class="w-6 h-6" id="menu-icon-open"></i>
+                    <i data-lucide="x" class="w-6 h-6 hidden" id="menu-icon-close"></i>
                 </button>
             </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden border-t border-gray-100" id="mobile-menu">
+            <nav class="flex flex-col px-5 py-4 gap-1">
+                <a href="#features" class="mobile-nav-link py-3 px-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">핵심 기능</a>
+                <a href="#ai-features" class="mobile-nav-link py-3 px-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">AI 컨설팅</a>
+                <a href="#how-it-works" class="mobile-nav-link py-3 px-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">사용 흐름</a>
+                <a href="#pricing" class="mobile-nav-link py-3 px-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">요금 안내</a>
+                <hr class="my-2 border-gray-100" />
+                <a href="/auth/signin" class="py-3 px-3 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition-colors">로그인</a>
+                <a href="/auth/signup" class="py-3 px-3 rounded-xl bg-brand-700 text-white font-semibold text-center hover:bg-brand-800 transition-colors">무료로 시작하기</a>
+            </nav>
         </div>
     </header>
 
@@ -592,11 +606,27 @@
             }
         });
 
-        // Mobile Menu (Simple alert placeholder for single file structure)
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-            // In a real app, this would toggle a mobile menu dropdown
-            // For this single-file demo, we'll just scroll to top
-            window.scrollTo({top: 0, behavior: 'smooth'});
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIconOpen = document.getElementById('menu-icon-open');
+        const menuIconClose = document.getElementById('menu-icon-close');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            const isOpen = !mobileMenu.classList.contains('hidden');
+            mobileMenu.classList.toggle('hidden');
+            menuIconOpen.classList.toggle('hidden');
+            menuIconClose.classList.toggle('hidden');
+            mobileMenuBtn.setAttribute('aria-label', isOpen ? '메뉴 열기' : '메뉴 닫기');
+        });
+
+        // Close mobile menu when a nav link is clicked
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+                menuIconOpen.classList.remove('hidden');
+                menuIconClose.classList.add('hidden');
+            });
         });
     </script>
 </body>
