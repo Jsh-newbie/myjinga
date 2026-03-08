@@ -1,6 +1,7 @@
 import type { ApiResponse } from '@/types/api';
 import type { UserProfile } from '@/types/user';
 import type { NormalizedQuestionnaire, TestResultWithId, TestSessionWithId } from '@/lib/careernet/types';
+import type { StudentRecord } from '@/types/record';
 
 export interface SessionItem {
   sessionId: string;
@@ -23,6 +24,18 @@ export interface SchoolSearchItem {
   name: string;
   address: string;
   code: string;
+}
+
+export interface SerializedTimestamp {
+  seconds?: number;
+  _seconds?: number;
+  nanoseconds?: number;
+  _nanoseconds?: number;
+}
+
+export interface RecordListItem extends Omit<StudentRecord, 'createdAt' | 'updatedAt'> {
+  createdAt?: SerializedTimestamp | null;
+  updatedAt?: SerializedTimestamp | null;
 }
 
 export interface SessionSaveRequest {
@@ -178,6 +191,46 @@ export const api = {
 
   removeFavoriteMajor(token: string, majorId: string) {
     return request<{ deleted: boolean }>(`/api/career-net/favorite-majors?majorId=${encodeURIComponent(majorId)}`, token, {
+      method: 'DELETE',
+    });
+  },
+
+  listRecords(token: string, query?: {
+    category?: string;
+    semester?: string;
+    limit?: number;
+    cursor?: string;
+  }) {
+    const params = new URLSearchParams();
+    if (query?.category) params.set('category', query.category);
+    if (query?.semester) params.set('semester', query.semester);
+    if (query?.limit !== undefined) params.set('limit', String(query.limit));
+    if (query?.cursor) params.set('cursor', query.cursor);
+
+    const suffix = params.size > 0 ? `?${params.toString()}` : '';
+    return request<{ items: RecordListItem[]; nextCursor: string | null }>(`/api/records${suffix}`, token);
+  },
+
+  getRecord(token: string, recordId: string) {
+    return request<{ record: StudentRecord }>(`/api/records/${recordId}`, token);
+  },
+
+  createRecord(token: string, data: Record<string, unknown>) {
+    return request<{ record: StudentRecord }>('/api/records', token, {
+      method: 'POST',
+      body: data,
+    });
+  },
+
+  updateRecord(token: string, recordId: string, data: Record<string, unknown>) {
+    return request<{ record: StudentRecord }>(`/api/records/${recordId}`, token, {
+      method: 'PATCH',
+      body: data,
+    });
+  },
+
+  deleteRecord(token: string, recordId: string) {
+    return request<{ deleted: boolean }>(`/api/records/${recordId}`, token, {
       method: 'DELETE',
     });
   },

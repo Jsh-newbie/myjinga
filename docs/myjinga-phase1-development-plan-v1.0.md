@@ -134,6 +134,10 @@
 
 목표: 핵심 사용자 가치(기록 관리) 제공
 
+기준 문서:
+1. `docs/myjinga-development-spec-v1.1.md`
+2. `docs/myjinga-records-spec-v1.0.md`
+
 작업:
 1. `records` CRUD API(생성/목록/상세/수정/삭제)
 2. 필드 검증(제목/본문 길이, `semester` 포맷)
