@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { useMemo, useState, useEffect, useTransition } from 'react';
+import { Suspense, useMemo, useState, useEffect, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { api } from '@/lib/api/client';
@@ -19,6 +19,13 @@ import type { RecordCategory } from '@/types/record';
 
 type Step = 1 | 2 | 3 | 4;
 
+const STEP_META: Array<{ value: Step; label: string; helper: string }> = [
+  { value: 1, label: '기록 목적', helper: '무엇을 남길지' },
+  { value: 2, label: '기록 종류', helper: '어떤 항목인지' },
+  { value: 3, label: '내용 입력', helper: '필요한 정보만' },
+  { value: 4, label: '저장 전 검토', helper: '한 번 더 확인' },
+];
+
 function toIsoDateTimeLocal(date: Date) {
   const offset = date.getTimezoneOffset();
   const localDate = new Date(date.getTime() - offset * 60 * 1000);
@@ -26,6 +33,26 @@ function toIsoDateTimeLocal(date: Date) {
 }
 
 export default function NewRecordPage() {
+  return (
+    <Suspense fallback={<NewRecordPageFallback />}>
+      <NewRecordPageContent />
+    </Suspense>
+  );
+}
+
+function NewRecordPageFallback() {
+  return (
+    <div className="ct-page">
+      <header className="ct-header">
+        <Link href="/records" className="ct-back">&lsaquo;</Link>
+        <span className="ct-header-title">기록 작성</span>
+        <span />
+      </header>
+    </div>
+  );
+}
+
+function NewRecordPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>(1);
@@ -177,15 +204,7 @@ export default function NewRecordPage() {
   }
 
   if (loading) {
-    return (
-      <div className="ct-page">
-        <header className="ct-header">
-          <Link href="/records" className="ct-back">&lsaquo;</Link>
-          <span className="ct-header-title">기록 작성</span>
-          <span />
-        </header>
-      </div>
-    );
+    return <NewRecordPageFallback />;
   }
 
   return (
@@ -201,15 +220,32 @@ export default function NewRecordPage() {
         <p>무엇을 기록할지 고르면, 필요한 질문만 보여줍니다.</p>
       </section>
 
-      <div className="record-wizard-steps">
-        {[1, 2, 3, 4].map((value) => (
-          <div
-            key={value}
-            className={`record-wizard-step ${step >= value ? 'record-wizard-step--active' : ''}`}
-          >
-            {value}
-          </div>
-        ))}
+      <div className="record-progress" aria-label="기록 작성 단계">
+        {STEP_META.map((item, index) => {
+          const isComplete = step > item.value;
+          const isCurrent = step === item.value;
+
+          return (
+            <div
+              key={item.value}
+              className={`record-progress-item ${isComplete ? 'record-progress-item--complete' : ''} ${isCurrent ? 'record-progress-item--current' : ''}`}
+            >
+              {index < STEP_META.length - 1 && <span className="record-progress-line" aria-hidden="true" />}
+              <div className="record-progress-node">
+                {isComplete ? '✓' : item.value}
+              </div>
+              <div className="record-progress-copy">
+                <strong>{item.label}</strong>
+                <span>{item.helper}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="record-progress-summary">
+        <strong>{STEP_META[step - 1].label}</strong>
+        <span>{STEP_META[step - 1].helper}</span>
       </div>
 
       {step === 1 && (

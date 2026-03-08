@@ -32,6 +32,7 @@
 | 구현 완료 | `users`, `testSessions`, `testResults` | Phase 1~2 |
 | 미구현 | `records`, `majors`, `subjects` | Phase 3 |
 | 미구현 | `subscriptions`, `payments`, `aiUsageLogs` | Phase 4 |
+| 미구현 | `insightContents`, `users/{uid}/insightSaves`, `users/{uid}/insightDrafts` | 학생부 Insight 초안 |
 
 ### 파일 위치
 
@@ -54,9 +55,12 @@ firestore/
 ├── users/{uid}                              # 사용자 프로필
 │   ├── testSessions/{sessionId}             # 진행 중 검사 세션
 │   ├── testResults/{resultId}               # 완료된 검사 결과
-│   └── records/{recordId}                   # 학생부 기록 (미구현)
+│   ├── records/{recordId}                   # 학생부 기록 (미구현)
+│   ├── insightSaves/{saveId}                # 학생부 Insight 저장 항목 (미구현)
+│   └── insightDrafts/{draftId}              # 학생부 Insight 초안 (미구현)
 ├── majors/{majorId}                         # 추천 학과 (미구현, 읽기전용)
 ├── subjects/{subjectId}                     # 고교학점제 과목 (미구현, 읽기전용)
+├── insightContents/{contentId}              # 학생부 Insight 콘텐츠 (미구현)
 ├── subscriptions/{subscriptionId}           # 구독 (미구현)
 ├── payments/{paymentId}                     # 결제 (미구현)
 └── aiUsageLogs/{logId}                      # AI 사용 로그 (미구현)
@@ -257,6 +261,67 @@ firestore/
 ### 4.5 payments/{paymentId}
 
 결제 내역.
+
+---
+
+### 4.6 insightContents/{contentId}
+
+학생부 Insight 기능의 공용 콘텐츠 저장소. 외부 수집 콘텐츠와 내부 재가공 메타데이터를 함께 관리한다.
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `title` | `string` | O | 콘텐츠 제목 |
+| `sourceName` | `string` | O | 출처명 |
+| `sourceUrl` | `string` | O | 원문 링크 |
+| `publishedAt` | `Timestamp` | O | 원문 발행일 |
+| `contentType` | `string` | O | 콘텐츠 유형 (`news`, `trend`, `research`, `career-story`, `major-story`) |
+| `topics` | `string[]` | O | 주제 태그 |
+| `relatedJobs` | `string[]` | O | 관련 직업 태그 |
+| `relatedMajors` | `string[]` | O | 관련 학과 태그 |
+| `summary` | `string` | O | 기본 요약 |
+| `studentInsightPoints` | `string[]` | O | 학생부 연결 포인트 |
+| `status` | `string` | O | 상태 (`draft`, `published`, `archived`) |
+| `createdAt` | `Timestamp` | O | 생성일시 |
+| `updatedAt` | `Timestamp` | O | 수정일시 |
+| `studentFriendlySummary` | `string` | - | 학생용 쉬운 요약 |
+| `whyItMatters` | `string` | - | 왜 중요한지 설명 |
+| `exploreQuestions` | `string[]` | - | 탐구 질문 |
+
+### 4.7 users/{uid}/insightSaves/{saveId}
+
+학생이 저장하거나 반응한 학생부 Insight 항목.
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `contentId` | `string` | O | 연결된 콘텐츠 ID |
+| `savedAt` | `Timestamp` | O | 저장일시 |
+| `reactionType` | `string` | O | 반응 유형 (`saved`, `curious`, `explore`, `record`) |
+| `titleSnapshot` | `string` | O | 저장 시점 제목 |
+| `sourceUrlSnapshot` | `string` | O | 저장 시점 원문 링크 |
+| `memo` | `string` | - | 학생 메모 |
+| `linkedJob` | `string` | - | 연결 직업 |
+| `linkedMajor` | `string` | - | 연결 학과 |
+| `linkedRecordId` | `string` | - | 연결 기록 ID |
+| `exploreQuestion` | `string` | - | 학생이 남긴 탐구 질문 |
+| `tags` | `string[]` | - | 사용자 태그 |
+| `status` | `string` | - | 상태 (`active`, `used`, `archived`) |
+
+### 4.8 users/{uid}/insightDrafts/{draftId}
+
+학생이 저장한 인사이트를 기반으로 만든 탐구/학생부 준비 초안.
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `draftType` | `string` | O | 초안 유형 (`reportOutline`, `selfReviewMaterial`, `subjectNoteMaterial`) |
+| `title` | `string` | O | 초안 제목 |
+| `sourceContentIds` | `string[]` | O | 입력 콘텐츠 목록 |
+| `createdAt` | `Timestamp` | O | 생성일시 |
+| `updatedAt` | `Timestamp` | O | 수정일시 |
+| `outline` | `string` | - | 초안 본문 또는 개요 |
+| `keyQuestions` | `string[]` | - | 핵심 질문 |
+| `linkedRecordIds` | `string[]` | - | 연결 기록 목록 |
+| `aiAssisted` | `boolean` | - | AI 보조 여부 |
+| `status` | `string` | - | 상태 (`draft`, `completed`, `archived`) |
 
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|

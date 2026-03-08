@@ -164,7 +164,7 @@ export default function DashboardPage() {
         <QuickItem icon={<TestIcon />} label="진로 검사" href="/career-test" />
         <QuickItem icon={<RecordIcon />} label="학생부 기록" href="/records" />
         <QuickItem icon={<ExploreIcon />} label="학과 탐색" href="/explore" />
-        <QuickItem icon={<AiIcon />} label="AI 도우미" href="/ai" />
+        <QuickItem icon={<InsightIcon />} label="학생부 Insight" href="/ai" />
         <QuickItem icon={<FavoriteJobIcon />} label="관심 직업" href="/favorites/jobs" />
         <QuickItem icon={<FavoriteMajorIcon />} label="관심 학과" href="/favorites/majors" />
       </div>
@@ -373,10 +373,13 @@ function ExploreIcon() {
   );
 }
 
-function AiIcon() {
+function InsightIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9z" />
+      <path d="M14 3v6h6" />
+      <path d="M11.5 11.5a2.5 2.5 0 1 1 4.24 1.78c-.44.43-.74.99-.74 1.6V16h-2v-.82c0-.86.34-1.69.95-2.29a2.5 2.5 0 0 0-1.76-4.27 2.5 2.5 0 0 0-2.36 1.67" />
+      <path d="M13 19h2" />
     </svg>
   );
 }

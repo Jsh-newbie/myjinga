@@ -2,6 +2,7 @@ import type { ApiResponse } from '@/types/api';
 import type { UserProfile } from '@/types/user';
 import type { NormalizedQuestionnaire, TestResultWithId, TestSessionWithId } from '@/lib/careernet/types';
 import type { StudentRecord } from '@/types/record';
+import type { InsightFeedResponse, InsightFeedTab, InsightSave } from '@/types/insight';
 
 export interface SessionItem {
   sessionId: string;
@@ -35,6 +36,11 @@ export interface SerializedTimestamp {
 
 export interface RecordListItem extends Omit<StudentRecord, 'createdAt' | 'updatedAt'> {
   createdAt?: SerializedTimestamp | null;
+  updatedAt?: SerializedTimestamp | null;
+}
+
+export interface InsightSaveItem extends Omit<InsightSave, 'savedAt' | 'updatedAt'> {
+  savedAt?: SerializedTimestamp | null;
   updatedAt?: SerializedTimestamp | null;
 }
 
@@ -231,6 +237,70 @@ export const api = {
 
   deleteRecord(token: string, recordId: string) {
     return request<{ deleted: boolean }>(`/api/records/${recordId}`, token, {
+      method: 'DELETE',
+    });
+  },
+
+  getInsightFeed(token: string, query?: { tab?: InsightFeedTab; limit?: number }) {
+    const params = new URLSearchParams();
+    if (query?.tab) params.set('tab', query.tab);
+    if (query?.limit !== undefined) params.set('limit', String(query.limit));
+    const suffix = params.size > 0 ? `?${params.toString()}` : '';
+    return request<InsightFeedResponse>(`/api/insights/feed${suffix}`, token);
+  },
+
+  listInsightSaves(token: string, query?: { status?: 'active' | 'used' | 'archived'; limit?: number }) {
+    const params = new URLSearchParams();
+    if (query?.status) params.set('status', query.status);
+    if (query?.limit !== undefined) params.set('limit', String(query.limit));
+    const suffix = params.size > 0 ? `?${params.toString()}` : '';
+    return request<{ items: InsightSaveItem[] }>(`/api/insights/saves${suffix}`, token);
+  },
+
+  saveInsight(
+    token: string,
+    data: {
+      contentId: string;
+      reactionType: 'saved' | 'curious' | 'explore' | 'record';
+      titleSnapshot: string;
+      sourceUrlSnapshot: string;
+      memo?: string;
+      linkedJob?: string;
+      linkedMajor?: string;
+      linkedRecordId?: string;
+      exploreQuestion?: string;
+      tags?: string[];
+      status?: 'active' | 'used' | 'archived';
+    }
+  ) {
+    return request<{ item: InsightSaveItem }>('/api/insights/saves', token, {
+      method: 'POST',
+      body: data,
+    });
+  },
+
+  updateInsightSave(
+    token: string,
+    saveId: string,
+    data: {
+      reactionType?: 'saved' | 'curious' | 'explore' | 'record';
+      memo?: string;
+      linkedJob?: string;
+      linkedMajor?: string;
+      linkedRecordId?: string;
+      exploreQuestion?: string;
+      tags?: string[];
+      status?: 'active' | 'used' | 'archived';
+    }
+  ) {
+    return request<{ item: InsightSaveItem }>(`/api/insights/saves/${saveId}`, token, {
+      method: 'PATCH',
+      body: data,
+    });
+  },
+
+  deleteInsightSave(token: string, saveId: string) {
+    return request<{ deleted: boolean }>(`/api/insights/saves/${saveId}`, token, {
       method: 'DELETE',
     });
   },
