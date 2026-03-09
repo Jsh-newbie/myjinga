@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 import { api, type RecordListItem } from '@/lib/api/client';
 import { getClientAuth } from '@/lib/firebase/client';
 import { getRecordCategoryLabel, RECORD_CATEGORY_META } from '@/lib/records/presenter';
+import type { RecordCategory } from '@/types/record';
 
 type LoadingState = 'loading' | 'ready' | 'error';
 
-const CATEGORY_CARDS = ['dailyLog', 'subjectNote', 'creativeActivity', 'careerIdea'] as const;
+const CATEGORY_CARDS = Object.keys(RECORD_CATEGORY_META) as RecordCategory[];
 
 function formatTimestamp(value: RecordListItem['updatedAt']) {
   const seconds = value?.seconds ?? value?._seconds;
@@ -53,7 +54,7 @@ export default function RecordsPage() {
 
       try {
         const token = await nextUser.getIdToken();
-        const result = await api.listRecords(token, { limit: 6 });
+        const result = await api.listRecords(token, { limit: 24 });
 
         if (!result.success) {
           setError(result.error.message);
@@ -71,6 +72,15 @@ export default function RecordsPage() {
 
     return () => unsub();
   }, [auth, router]);
+
+  const categorySummaries = CATEGORY_CARDS.map((category) => {
+    const items = recentRecords.filter((record) => record.category === category);
+    return {
+      category,
+      count: items.length,
+      items: items.slice(0, 3),
+    };
+  }).filter((summary) => summary.count > 0 || ['dailyLog', 'subjectNote', 'creativeActivity', 'careerIdea'].includes(summary.category));
 
   return (
     <div className="ct-page">
@@ -104,41 +114,38 @@ export default function RecordsPage() {
       <section className="ct-section">
         <h2 className="ct-section-title">기록 카테고리</h2>
         <div className="records-category-grid">
-          {CATEGORY_CARDS.map((card) => {
-            const meta = RECORD_CATEGORY_META[card];
+          {categorySummaries.map((summary) => {
+            const meta = RECORD_CATEGORY_META[summary.category];
             return (
-              <button
-                key={card}
-                type="button"
-                className="records-category-card records-category-card--button"
-                onClick={() => router.push(`/records/new?category=${card}`)}
+              <article
+                key={summary.category}
+                className="records-category-card"
               >
                 <div className="records-category-icon" style={meta.accent}>
                   {meta.shortLabel}
                 </div>
-                <strong>{meta.label}</strong>
-                <p>{meta.description}</p>
-              </button>
+                <div className="records-category-head">
+                  <strong>{meta.label}</strong>
+                  <span className="records-category-count">{summary.count}개</span>
+                </div>
+                {summary.count === 0 ? (
+                  <p>{meta.description}</p>
+                ) : (
+                  <div className="records-category-preview">
+                    {summary.items.map((item) => (
+                      <Link key={item.id} href={`/records/${item.id}`} className="records-category-link">
+                        <span className="records-category-link-title">{item.title}</span>
+                        <span className="records-category-link-meta">
+                          {item.subject ? `${item.subject} · ` : ''}
+                          {formatTimestamp(item.updatedAt ?? item.createdAt)}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </article>
             );
           })}
-        </div>
-      </section>
-
-      <section className="ct-section">
-        <h2 className="ct-section-title">관리 흐름</h2>
-        <div className="records-flow-list">
-          <div className="records-flow-item">
-            <strong>1. 매일 기록</strong>
-            <span>오늘 있었던 수업, 활동, 질문, 아이디어를 짧게 남깁니다.</span>
-          </div>
-          <div className="records-flow-item">
-            <strong>2. 주간 정리</strong>
-            <span>중요한 기록을 세특·창체·진로 아이디어로 분류합니다.</span>
-          </div>
-          <div className="records-flow-item">
-            <strong>3. 학기말 검토</strong>
-            <span>실제 학생부와 비교하며 누락과 금지 표현을 점검합니다.</span>
-          </div>
         </div>
       </section>
 
@@ -176,18 +183,42 @@ export default function RecordsPage() {
       </section>
 
       <section className="ct-section">
-        <h2 className="ct-section-title">기록할 때 주의할 점</h2>
-        <div className="records-guide-card">
-          <strong>학생부 반영 제한 항목</strong>
-          <ul className="records-guide-list">
-            <li>교외대회, 교외상, 해외활동, 방과후학교 활동은 학생부형 기록으로 분류하지 않습니다.</li>
-            <li>특정 대학명, 기관명, 상호명, 강사명은 서술형 기록에 넣지 않는 것을 기본으로 합니다.</li>
-            <li>수상은 교내상, 자격증은 자격증 항목에서만 관리합니다.</li>
-          </ul>
-        </div>
+        <details className="records-help-toggle">
+          <summary className="records-help-summary">
+            <span>기록 안내와 주의사항</span>
+            <span className="records-help-summary-meta">펼쳐서 보기</span>
+          </summary>
+          <div className="records-help-body">
+            <div className="records-help-section">
+              <strong>이 화면은 이렇게 사용합니다</strong>
+              <div className="records-flow-list">
+                <div className="records-flow-item">
+                  <strong>1. 매일 기록</strong>
+                  <span>오늘 있었던 수업, 활동, 질문, 아이디어를 짧게 남깁니다.</span>
+                </div>
+                <div className="records-flow-item">
+                  <strong>2. 주간 정리</strong>
+                  <span>중요한 기록을 세특·창체·진로 아이디어로 분류합니다.</span>
+                </div>
+                <div className="records-flow-item">
+                  <strong>3. 학기말 검토</strong>
+                  <span>실제 학생부와 비교하며 누락과 금지 표현을 점검합니다.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="records-help-section">
+              <strong>기록할 때 주의할 점</strong>
+              <ul className="records-guide-list">
+                <li>교외대회, 교외상, 해외활동, 방과후학교 활동은 학생부형 기록으로 분류하지 않습니다.</li>
+                <li>특정 대학명, 기관명, 상호명, 강사명은 서술형 기록에 넣지 않는 것을 기본으로 합니다.</li>
+                <li>수상은 교내상, 자격증은 자격증 항목에서만 관리합니다.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
       </section>
 
-      {user && <div className="records-footer-note">{user.email}</div>}
     </div>
   );
 }

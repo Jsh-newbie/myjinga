@@ -2,8 +2,6 @@ import { z } from 'zod';
 
 import { fail, ok } from '@/lib/api/response';
 import { verifyBearerToken } from '@/lib/firebase/server-auth';
-import { updateRecordSchema } from '@/lib/records/schema';
-import { deleteRecord, getRecord, updateRecord } from '@/lib/records/repository';
 
 export const runtime = 'nodejs';
 
@@ -27,6 +25,7 @@ export async function GET(_request: Request, context: RouteContext) {
       );
     }
 
+    const { getRecord } = await import('@/lib/records/repository');
     const record = await getRecord(authResult.decodedToken.uid, context.params.recordId);
     if (!record) {
       return fail({ code: 'NOT_FOUND', message: '기록을 찾을 수 없습니다.' }, 404);
@@ -67,6 +66,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return fail({ code: 'VALIDATION_ERROR', message: '유효한 JSON 본문이 필요합니다.' }, 400);
     }
 
+    const { updateRecordSchema } = await import('@/lib/records/schema');
     const parsed = updateRecordSchema.safeParse(body);
     if (!parsed.success) {
       return fail(
@@ -80,6 +80,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     try {
+      const { updateRecord } = await import('@/lib/records/repository');
       const record = await updateRecord(authResult.decodedToken.uid, context.params.recordId, parsed.data);
       if (!record) {
         return fail({ code: 'NOT_FOUND', message: '기록을 찾을 수 없습니다.' }, 404);
@@ -128,6 +129,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       );
     }
 
+    const { deleteRecord } = await import('@/lib/records/repository');
     const deleted = await deleteRecord(authResult.decodedToken.uid, context.params.recordId);
     if (!deleted) {
       return fail({ code: 'NOT_FOUND', message: '기록을 찾을 수 없습니다.' }, 404);

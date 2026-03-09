@@ -25,6 +25,8 @@ export type InsightFeedResponse = {
   items: InsightFeedItem[];
   keywords: string[];
   fallback: boolean;
+  hasMore: boolean;
+  totalCount: number;
   warning?: {
     code: string;
     message: string;

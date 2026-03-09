@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     const parsed = insightFeedQuerySchema.safeParse({
       tab: url.searchParams.get('tab') ?? undefined,
       limit: url.searchParams.get('limit') ?? undefined,
+      keyword: url.searchParams.get('keyword') ?? undefined,
     });
 
     if (!parsed.success) {
@@ -41,7 +42,8 @@ export async function GET(request: Request) {
     const result = await getInsightFeed(
       authResult.decodedToken.uid,
       parsed.data.tab ?? 'all',
-      parsed.data.limit ?? 12
+      parsed.data.limit ?? 12,
+      parsed.data.keyword
     );
 
     return ok(result);

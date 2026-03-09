@@ -2,14 +2,25 @@ import { XMLParser } from 'fast-xml-parser';
 import { createHash } from 'node:crypto';
 
 import { getAdminDb } from '@/lib/firebase/admin';
+import { normalizeInsightSourceUrl } from '@/lib/insights/source-url';
 import { expandInsightKeywords, findInsightMatches } from '@/lib/insights/topic-map';
 import type { InsightFeedItem, InsightFeedTab } from '@/types/insight';
 
 type UserSignals = {
   favoriteJobs: string[];
+  favoriteJobKeywords: string[];
+  favoriteJobKeywordGroups: string[][];
   favoriteMajors: string[];
+  favoriteMajorKeywordGroups: string[][];
   recordTopics: string[];
   interests: string[];
+};
+
+type SignalGroup = {
+  id: string;
+  label: string;
+  type: 'job' | 'major' | 'record';
+  keywords: string[];
 };
 
 type RawRssItem = {
@@ -26,12 +37,20 @@ const parser = new XMLParser({
   textNodeName: '#text',
 });
 
+const CAREERNET_BASE = 'https://www.career.go.kr/cnet/front/openapi';
+const CAREERNET_TIMEOUT_MS = 8000;
+const CAREERNET_MAX_RETRIES = 1;
+const CAREERNET_KEYWORD_LIMIT = 6;
+const CAREERNET_JOB_ENRICH_LIMIT = 3;
+const RECENT_DAYS_LIMIT = 30;
+const MAX_ITEMS_PER_GROUP = 6;
+
 const FALLBACK_ITEMS: Array<Omit<InsightFeedItem, 'score' | 'matchedKeywords'>> = [
   {
     id: 'fallback-healthcare-ai',
     title: '헬스케어 AI 확산, 의료 현장은 어떻게 달라질까',
     sourceName: 'Myjinga Curated',
-    sourceUrl: 'https://news.google.com/rss/search?q=%ED%97%AC%EC%8A%A4%EC%BC%80%EC%96%B4%20AI&hl=ko&gl=KR&ceid=KR:ko',
+    sourceUrl: 'https://news.google.com/search?q=%ED%97%AC%EC%8A%A4%EC%BC%80%EC%96%B4%20AI&hl=ko&gl=KR&ceid=KR:ko',
     publishedAt: null,
     summary: '의료와 기술의 결합은 간호, 의생명, 컴퓨터공학 관심 학생에게 모두 연결될 수 있는 대표 주제입니다.',
     whyItMatters: '생명과학, 정보, 윤리 과목을 함께 연결해 볼 수 있는 탐구 소재입니다.',
@@ -46,7 +65,7 @@ const FALLBACK_ITEMS: Array<Omit<InsightFeedItem, 'score' | 'matchedKeywords'>> 
     id: 'fallback-education-ai',
     title: '학교 현장에서 AI와 디지털 학습 도구는 어떻게 쓰일까',
     sourceName: 'Myjinga Curated',
-    sourceUrl: 'https://news.google.com/rss/search?q=%EA%B5%90%EC%9C%A1%20AI&hl=ko&gl=KR&ceid=KR:ko',
+    sourceUrl: 'https://news.google.com/search?q=%EA%B5%90%EC%9C%A1%20AI&hl=ko&gl=KR&ceid=KR:ko',
     publishedAt: null,
     summary: '교육과 기술이 만나는 흐름은 교육학, 심리학, 컴퓨터공학 관심 학생에게 모두 흥미로운 주제입니다.',
     whyItMatters: '교수법, 학습 격차, 기술 윤리를 함께 고민해 볼 수 있습니다.',
@@ -61,7 +80,7 @@ const FALLBACK_ITEMS: Array<Omit<InsightFeedItem, 'score' | 'matchedKeywords'>> 
     id: 'fallback-media-career',
     title: '콘텐츠와 미디어 직업은 왜 더 세분화되고 있을까',
     sourceName: 'Myjinga Curated',
-    sourceUrl: 'https://news.google.com/rss/search?q=%EB%AF%B8%EB%94%94%EC%96%B4%20%EC%A7%81%EC%97%85&hl=ko&gl=KR&ceid=KR:ko',
+    sourceUrl: 'https://news.google.com/search?q=%EB%AF%B8%EB%94%94%EC%96%B4%20%EC%A7%81%EC%97%85&hl=ko&gl=KR&ceid=KR:ko',
     publishedAt: null,
     summary: '기자, 디자이너, 콘텐츠 기획자처럼 미디어 관련 진로는 기술과 플랫폼 변화에 따라 역할이 계속 달라지고 있습니다.',
     whyItMatters: '미디어커뮤니케이션, 디자인, 사회이슈 탐구와 자연스럽게 연결됩니다.',
@@ -94,6 +113,86 @@ function sanitizeText(value: string | undefined) {
     .trim();
 }
 
+function isLikelyKoreanText(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  const hangulMatches = trimmed.match(/[가-힣]/g) ?? [];
+  const latinWordMatches = trimmed.match(/[A-Za-z]{3,}/g) ?? [];
+
+  if (hangulMatches.length >= 4) return true;
+  if (hangulMatches.length === 0) return false;
+
+  return hangulMatches.length >= latinWordMatches.length;
+}
+
+const KOREAN_HOST_ALLOWLIST = [
+  '.kr',
+  'yna.co.kr',
+  'chosun.com',
+  'joongang.co.kr',
+  'donga.com',
+  'hani.co.kr',
+  'khan.co.kr',
+  'mk.co.kr',
+  'hankyung.com',
+  'sedaily.com',
+  'mt.co.kr',
+  'newsis.com',
+  'nocutnews.co.kr',
+  'ytn.co.kr',
+  'sbs.co.kr',
+  'kbs.co.kr',
+  'mbc.co.kr',
+];
+
+const TRANSLATED_PATH_PATTERNS = [
+  /^\/ko(\/|$)/i,
+  /^\/kr(\/|$)/i,
+  /\/ko\/$/i,
+  /\/ko\//i,
+  /[?&](lang|locale)=ko\b/i,
+  /[?&]lang=kr\b/i,
+];
+
+const BLOCKED_HOST_SUFFIXES = [
+  '.vn',
+];
+
+function isLikelyTranslatedForeignUrl(link: string) {
+  try {
+    const url = new URL(link);
+    const host = url.hostname.toLowerCase();
+    const pathWithQuery = `${url.pathname}${url.search}`;
+
+    if (BLOCKED_HOST_SUFFIXES.some((suffix) => host === suffix.slice(1) || host.endsWith(suffix))) {
+      return true;
+    }
+
+    const isKoreanHost = KOREAN_HOST_ALLOWLIST.some((domain) => host === domain || host.endsWith(domain));
+    if (isKoreanHost) return false;
+
+    return TRANSLATED_PATH_PATTERNS.some((pattern) => pattern.test(pathWithQuery));
+  } catch {
+    return false;
+  }
+}
+
+function isKoreanNewsEntry(title: string, description: string, sourceName: string, link: string) {
+  const normalizedSource = sourceName.toLowerCase();
+  if (
+    BLOCKED_HOST_SUFFIXES.some((suffix) => normalizedSource === suffix.slice(1) || normalizedSource.endsWith(suffix) || normalizedSource.includes(suffix))
+  ) {
+    return false;
+  }
+
+  if (isLikelyTranslatedForeignUrl(link)) return false;
+  if (isLikelyKoreanText(title)) return true;
+  if (description && isLikelyKoreanText(description)) return true;
+
+  return normalizedSource.includes('코리아') || normalizedSource.includes('한국') || normalizedSource.includes('연합뉴스');
+}
+
 function makeContentId(link: string, title: string) {
   return createHash('sha1').update(`${link}::${title}`).digest('hex').slice(0, 20);
 }
@@ -102,6 +201,144 @@ function formatKoreanDate(date: string | null) {
   if (!date) return null;
   const value = new Date(date);
   return Number.isNaN(value.getTime()) ? null : value.toISOString();
+}
+
+function getPublishedTime(date: string | null | undefined) {
+  if (!date) return Number.NEGATIVE_INFINITY;
+  const value = new Date(date).getTime();
+  return Number.isNaN(value) ? Number.NEGATIVE_INFINITY : value;
+}
+
+function isWithinRecentWindow(date: string | null | undefined, days = RECENT_DAYS_LIMIT) {
+  const publishedTime = getPublishedTime(date);
+  if (!Number.isFinite(publishedTime)) return false;
+
+  return Date.now() - publishedTime <= days * 24 * 60 * 60 * 1000;
+}
+
+function normalizeKeyword(value: string) {
+  return value
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/[·|]/g, ',')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeHeadlineClusterKey(title: string) {
+  const normalized = title
+    .toLowerCase()
+    .replace(/\[[^\]]+\]/g, ' ')
+    .replace(/\([^)]+\)/g, ' ')
+    .replace(/[“”"'‘’]/g, '')
+    .replace(/[!?,.:;/\\|]/g, ' ')
+    .replace(/\b(속보|단독|종합|포토|영상|뉴스쏙|브리핑)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return normalized
+    .split(' ')
+    .filter((token) => token.length >= 3)
+    .slice(0, 5)
+    .join(' ');
+}
+
+function splitKeywordCandidates(value: string | undefined) {
+  if (!value) return [];
+
+  return normalizeKeyword(value)
+    .split(/[,\n/]/)
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 2 && item.length <= 18);
+}
+
+function uniqueKeywords(values: string[], limit = CAREERNET_KEYWORD_LIMIT) {
+  const deduped = new Set<string>();
+
+  values.forEach((value) => {
+    const normalized = normalizeKeyword(value);
+    if (!normalized || normalized.length < 2 || normalized.length > 18) return;
+    deduped.add(normalized);
+  });
+
+  return [...deduped].slice(0, limit);
+}
+
+function interleaveKeywordGroups(groups: string[][], limit: number) {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  const maxLength = Math.max(0, ...groups.map((group) => group.length));
+
+  for (let index = 0; index < maxLength; index += 1) {
+    for (const group of groups) {
+      const keyword = group[index];
+      if (!keyword || seen.has(keyword)) continue;
+
+      seen.add(keyword);
+      result.push(keyword);
+
+      if (result.length >= limit) {
+        return result;
+      }
+    }
+  }
+
+  return result;
+}
+
+async function fetchCareerNetJobDetail(jobCode: string) {
+  const apiKey = process.env.CAREERNET_API_KEY?.trim();
+  if (!apiKey) return null;
+
+  const url = `${CAREERNET_BASE}/job.json?apiKey=${encodeURIComponent(apiKey)}&seq=${encodeURIComponent(jobCode)}`;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= CAREERNET_MAX_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(CAREERNET_TIMEOUT_MS),
+        headers: { Accept: 'application/json' },
+        next: { revalidate: 60 * 60 * 24 },
+      });
+
+      if (!response.ok) {
+        throw new Error(`CAREERNET_HTTP_${response.status}`);
+      }
+
+      return await response.json() as Record<string, unknown>;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  console.error('[insights][feed] careernet job keyword fetch failed', { jobCode, error: lastError });
+  return null;
+}
+
+async function fetchCareerNetJobKeywords(jobCode: string, jobName: string) {
+  const raw = await fetchCareerNetJobDetail(jobCode);
+  if (!raw) return [jobName];
+
+  const base = (raw.baseInfo ?? {}) as Record<string, unknown>;
+  const abilityList = (raw.abilityList ?? []) as Array<{ ability_name?: string }>;
+  const interestList = (raw.interestList ?? []) as Array<{ interest?: string }>;
+  const departList = (raw.departList ?? []) as Array<{ depart_name?: string }>;
+
+  const derivedKeywords = uniqueKeywords([
+    String(base.std_job_nm ?? ''),
+    String(base.aptit_name ?? ''),
+    ...splitKeywordCandidates(String(base.rel_job_nm ?? '')),
+    ...abilityList.map((item) => String(item.ability_name ?? '')),
+    ...interestList.map((item) => String(item.interest ?? '')),
+    ...departList.map((item) => String(item.depart_name ?? '')),
+  ]).filter((keyword) => keyword !== jobName);
+
+  return derivedKeywords.length > 0 ? derivedKeywords : [jobName];
+}
+
+function buildMajorKeywordGroup(majorName: string) {
+  const expanded = expandInsightKeywords([majorName]).filter((keyword) => keyword !== majorName);
+  const keywords = uniqueKeywords([majorName, ...expanded], CAREERNET_KEYWORD_LIMIT);
+  return keywords.length > 0 ? keywords : [majorName];
 }
 
 async function getUserSignals(uid: string): Promise<UserSignals> {
@@ -114,6 +351,13 @@ async function getUserSignals(uid: string): Promise<UserSignals> {
 
   const favoriteJobs = jobsSnapshot.docs.map((doc) => String(doc.data().jobName ?? '')).filter(Boolean);
   const favoriteMajors = majorsSnapshot.docs.map((doc) => String(doc.data().majorName ?? '')).filter(Boolean);
+  const favoriteJobKeywordGroups = await Promise.all(
+    jobsSnapshot.docs
+      .slice(0, CAREERNET_JOB_ENRICH_LIMIT)
+      .map((doc) => fetchCareerNetJobKeywords(doc.id, String(doc.data().jobName ?? '')))
+  );
+  const favoriteJobKeywords = interleaveKeywordGroups(favoriteJobKeywordGroups, 12);
+  const favoriteMajorKeywordGroups = favoriteMajors.map((majorName) => buildMajorKeywordGroup(majorName));
 
   const recordTopics = recordsSnapshot.docs
     .flatMap((doc) => {
@@ -133,23 +377,60 @@ async function getUserSignals(uid: string): Promise<UserSignals> {
     ? userSnapshot.data()?.interests.filter((value: unknown): value is string => typeof value === 'string')
     : [];
 
-  return { favoriteJobs, favoriteMajors, recordTopics, interests };
+  return { favoriteJobs, favoriteJobKeywords, favoriteJobKeywordGroups, favoriteMajors, favoriteMajorKeywordGroups, recordTopics, interests };
 }
 
-function buildKeywords(signals: UserSignals, tab: InsightFeedTab) {
-  const base =
+function buildSignalGroups(signals: UserSignals, tab: InsightFeedTab, selectedKeyword?: string): SignalGroup[] {
+  if (selectedKeyword) {
+    return [
+      {
+        id: `keyword:${selectedKeyword}`,
+        label: selectedKeyword,
+        type: 'record',
+        keywords: uniqueKeywords([selectedKeyword, ...expandInsightKeywords([selectedKeyword])], 8),
+      },
+    ];
+  }
+
+  const jobGroups = signals.favoriteJobs.map((jobName, index) => ({
+    id: `job:${jobName}`,
+    label: jobName,
+    type: 'job' as const,
+    keywords: uniqueKeywords(
+      [jobName, ...(signals.favoriteJobKeywordGroups[index] ?? []), ...expandInsightKeywords([jobName])],
+      CAREERNET_KEYWORD_LIMIT
+    ),
+  }));
+
+  const majorGroups = signals.favoriteMajors.map((majorName, index) => ({
+    id: `major:${majorName}`,
+    label: majorName,
+    type: 'major' as const,
+    keywords: signals.favoriteMajorKeywordGroups[index] ?? [majorName],
+  }));
+
+  const recordGroups = signals.recordTopics.slice(0, 4).map((topic) => ({
+    id: `record:${topic}`,
+    label: topic,
+    type: 'record' as const,
+    keywords: uniqueKeywords([topic, ...expandInsightKeywords([topic])], 4),
+  }));
+
+  const groups =
     tab === 'jobs'
-      ? signals.favoriteJobs
+      ? jobGroups
       : tab === 'majors'
-        ? signals.favoriteMajors
+        ? majorGroups
         : tab === 'record-linked'
-          ? signals.recordTopics
-          : [...signals.favoriteJobs, ...signals.favoriteMajors, ...signals.recordTopics, ...signals.interests];
+          ? recordGroups
+          : [...jobGroups, ...majorGroups, ...recordGroups];
 
-  const expanded = expandInsightKeywords(base).slice(0, 6);
-  if (expanded.length > 0) return expanded;
+  return groups.filter((group) => group.keywords.length > 0);
+}
 
-  return ['진로', '학과', '직업', '탐구'];
+function buildKeywords(groups: SignalGroup[]) {
+  const keywords = interleaveKeywordGroups(groups.map((group) => group.keywords), 12);
+  return keywords.length > 0 ? keywords : ['진로', '학과', '직업', '탐구'];
 }
 
 async function fetchGoogleNewsFeed(keyword: string): Promise<RawRssItem[]> {
@@ -237,46 +518,126 @@ function inferRelations(keyword: string, title: string, description: string) {
   };
 }
 
-export async function getInsightFeed(uid: string, tab: InsightFeedTab = 'all', limit = 12) {
+export async function getInsightFeed(uid: string, tab: InsightFeedTab = 'all', limit = 12, selectedKeyword?: string) {
   const signals = await getUserSignals(uid);
-  const keywords = buildKeywords(signals, tab);
+  const groups = buildSignalGroups(signals, tab, selectedKeyword);
+  const keywords = buildKeywords(groups);
 
   try {
-    const rawFeeds = await Promise.all(keywords.slice(0, 4).map((keyword) => fetchGoogleNewsFeed(keyword)));
-    const deduped = new Map<string, Omit<InsightFeedItem, 'score' | 'matchedKeywords'>>();
+    const feedCache = new Map<string, Promise<RawRssItem[]>>();
+    const getFeedByKeyword = (keyword: string) => {
+      if (!feedCache.has(keyword)) {
+        feedCache.set(keyword, fetchGoogleNewsFeed(keyword));
+      }
 
-    rawFeeds.forEach((items, index) => {
-      const keyword = keywords[index];
+      return feedCache.get(keyword)!;
+    };
 
-      items.slice(0, 8).forEach((entry) => {
-        const title = sanitizeText(entry.title);
-        const link = sanitizeText(entry.link);
-        if (!title || !link) return;
+    const groupedItems = await Promise.all(
+      groups.map(async (group) => {
+        const entriesByKeyword = await Promise.all(group.keywords.map(async (keyword) => ({
+          keyword,
+          items: await getFeedByKeyword(keyword),
+        })));
 
-        const description = sanitizeText(entry.description);
-        const sourceField = typeof entry.source === 'string' ? entry.source : entry.source?.['#text'];
-        const sourceName = sanitizeText(sourceField) || 'Google News';
-        const relation = inferRelations(keyword, title, description);
-        const id = makeContentId(link, title);
+        const groupItems = new Map<string, Omit<InsightFeedItem, 'score' | 'matchedKeywords'>>();
 
-        if (!deduped.has(id)) {
-          deduped.set(id, {
-            id,
-            title,
-            sourceName,
-            sourceUrl: link,
-            publishedAt: formatKoreanDate(entry.pubDate ?? null),
-            contentType: 'news',
-            ...relation,
+        entriesByKeyword.forEach(({ keyword, items }) => {
+          [...items]
+            .sort((a, b) => getPublishedTime(b.pubDate) - getPublishedTime(a.pubDate))
+            .forEach((entry) => {
+              if (!isWithinRecentWindow(entry.pubDate ?? null)) return;
+
+              const title = sanitizeText(entry.title);
+              const link = sanitizeText(entry.link);
+              if (!title || !link) return;
+
+              const id = makeContentId(link, title);
+              const description = sanitizeText(entry.description);
+              const sourceField = typeof entry.source === 'string' ? entry.source : entry.source?.['#text'];
+              const sourceName = sanitizeText(sourceField) || 'Google News';
+              if (!isKoreanNewsEntry(title, description, sourceName, link)) return;
+
+              const relation = inferRelations(group.label, title, description);
+              const nextItem = {
+                id,
+                title,
+                sourceName,
+                sourceUrl: normalizeInsightSourceUrl(link),
+                publishedAt: formatKoreanDate(entry.pubDate ?? null),
+                contentType: 'news' as const,
+                ...relation,
+              };
+              const existing = groupItems.get(id);
+
+              if (!existing || getPublishedTime(nextItem.publishedAt) > getPublishedTime(existing.publishedAt)) {
+                groupItems.set(id, nextItem);
+              }
+            });
+        });
+
+        const items = [...groupItems.values()]
+          .map((item) => scoreItem(item, signals, keywords))
+          .sort((a, b) => {
+            const timeDiff = getPublishedTime(b.publishedAt) - getPublishedTime(a.publishedAt);
+            if (timeDiff !== 0) return timeDiff;
+            return b.score - a.score;
           });
+
+        return {
+          group,
+          items,
+        };
+      })
+    );
+
+    const dedupedByHeadline = new Map<
+      string,
+      {
+        groupId: string;
+        item: ReturnType<typeof scoreItem>;
+      }
+    >();
+
+    groupedItems.forEach((entry) => {
+      entry.items.forEach((item) => {
+        const clusterKey = normalizeHeadlineClusterKey(item.title) || item.id;
+        const existing = dedupedByHeadline.get(clusterKey);
+
+        if (!existing) {
+          dedupedByHeadline.set(clusterKey, { groupId: entry.group.id, item });
+          return;
+        }
+
+        const nextPublished = getPublishedTime(item.publishedAt);
+        const existingPublished = getPublishedTime(existing.item.publishedAt);
+
+        if (nextPublished > existingPublished || (nextPublished === existingPublished && item.score > existing.item.score)) {
+          dedupedByHeadline.set(clusterKey, { groupId: entry.group.id, item });
         }
       });
     });
 
-    const items = [...deduped.values()]
-      .map((item) => scoreItem(item, signals, keywords))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    const seenIds = new Set<string>();
+    const groupCounts = new Map<string, number>();
+    const allItems = [...dedupedByHeadline.values()]
+      .sort((a, b) => {
+        const timeDiff = getPublishedTime(b.item.publishedAt) - getPublishedTime(a.item.publishedAt);
+        if (timeDiff !== 0) return timeDiff;
+        return b.item.score - a.item.score;
+      })
+      .filter(({ groupId, item }) => {
+        if (seenIds.has(item.id)) return false;
+
+        const currentGroupCount = groupCounts.get(groupId) ?? 0;
+        if (currentGroupCount >= MAX_ITEMS_PER_GROUP) return false;
+
+        seenIds.add(item.id);
+        groupCounts.set(groupId, currentGroupCount + 1);
+        return true;
+      });
+
+    const items = allItems.map((entry) => entry.item).slice(0, limit);
 
     if (items.length === 0) {
       throw new Error('EMPTY_FEED');
@@ -286,14 +647,22 @@ export async function getInsightFeed(uid: string, tab: InsightFeedTab = 'all', l
       items,
       keywords,
       fallback: false,
+      hasMore: allItems.length > limit,
+      totalCount: allItems.length,
     };
   } catch (error) {
     console.error('[insights][feed] fallback', error);
 
+    const fallbackItems = FALLBACK_ITEMS
+      .map((item) => scoreItem(item, signals, keywords))
+      .sort((a, b) => b.score - a.score);
+
     return {
-      items: FALLBACK_ITEMS.map((item) => scoreItem(item, signals, keywords)).sort((a, b) => b.score - a.score).slice(0, limit),
+      items: fallbackItems.slice(0, limit),
       keywords,
       fallback: true,
+      hasMore: fallbackItems.length > limit,
+      totalCount: fallbackItems.length,
       warning: {
         code: 'INSIGHT_FEED_FALLBACK',
         message: '일부 최신 콘텐츠를 불러오지 못해 기본 추천 콘텐츠를 먼저 보여드리고 있어요.',

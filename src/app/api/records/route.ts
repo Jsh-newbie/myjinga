@@ -2,8 +2,6 @@ import { z } from 'zod';
 
 import { fail, ok } from '@/lib/api/response';
 import { verifyBearerToken } from '@/lib/firebase/server-auth';
-import { createRecordSchema, listRecordsQuerySchema } from '@/lib/records/schema';
-import { createRecord, listRecords } from '@/lib/records/repository';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +20,7 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(request.url);
+    const { listRecordsQuerySchema } = await import('@/lib/records/schema');
     const parsed = listRecordsQuerySchema.safeParse({
       category: url.searchParams.get('category') ?? undefined,
       semester: url.searchParams.get('semester') ?? undefined,
@@ -40,6 +39,7 @@ export async function GET(request: Request) {
       );
     }
 
+    const { listRecords } = await import('@/lib/records/repository');
     const result = await listRecords(authResult.decodedToken.uid, parsed.data);
     return ok(result);
   } catch (error) {
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       return fail({ code: 'VALIDATION_ERROR', message: '유효한 JSON 본문이 필요합니다.' }, 400);
     }
 
+    const { createRecordSchema } = await import('@/lib/records/schema');
     const parsed = createRecordSchema.safeParse(body);
     if (!parsed.success) {
       return fail(
@@ -90,6 +91,7 @@ export async function POST(request: Request) {
     }
 
     try {
+      const { createRecord } = await import('@/lib/records/repository');
       const record = await createRecord(authResult.decodedToken.uid, parsed.data);
       return ok({ record }, 201);
     } catch (error) {

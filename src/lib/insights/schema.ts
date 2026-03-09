@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 export const insightFeedQuerySchema = z.object({
   tab: z.enum(['all', 'jobs', 'majors', 'record-linked']).optional(),
-  limit: z.coerce.number().int().min(1).max(20).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  keyword: z.string().trim().min(1).max(50).optional(),
 });
 
 export const listInsightSavesQuerySchema = z.object({

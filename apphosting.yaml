@@ -73,3 +73,8 @@ env:
     availability:
       - RUNTIME
     secret: NEIS_API_KEY
+
+  - variable: DATA_GO_KR_API_KEY
+    availability:
+      - RUNTIME
+    secret: DATA_GO_KR_API_KEY

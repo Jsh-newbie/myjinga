@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 import { getClientAuth } from '@/lib/firebase/client';
 import { api } from '@/lib/api/client';
+import { JobInfoModal, type JobModalItem } from '@/components/jobs/JobInfoModal';
 
 interface FavoriteJob {
   jobCode: string;
@@ -18,6 +19,7 @@ export default function FavoriteJobsPage() {
   const [jobs, setJobs] = useState<FavoriteJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobModalItem | null>(null);
 
   useEffect(() => {
     const auth = getClientAuth();
@@ -48,6 +50,26 @@ export default function FavoriteJobsPage() {
     finally { setRemovingId(null); }
   }
 
+  function handleFavoriteChange(payload: { isFavorite: boolean; jobCode: string; jobName: string }) {
+    setJobs((prev) => {
+      if (payload.isFavorite) {
+        if (prev.some((job) => job.jobCode === payload.jobCode)) {
+          return prev;
+        }
+
+        return [
+          ...prev,
+          {
+            jobCode: payload.jobCode,
+            jobName: payload.jobName,
+          },
+        ];
+      }
+
+      return prev.filter((job) => job.jobCode !== payload.jobCode);
+    });
+  }
+
   return (
     <div className="main-page">
       <header className="main-header">
@@ -72,10 +94,15 @@ export default function FavoriteJobsPage() {
         <ul className="fav-list">
           {jobs.map((job) => (
             <li key={job.jobCode} className="fav-item">
-              <div className="fav-item-info">
+              <button
+                type="button"
+                className="fav-item-info fav-item-info-button"
+                onClick={() => setSelectedJob({ code: job.jobCode, name: job.jobName })}
+                aria-label={`${job.jobName} 상세 보기`}
+              >
                 <span className="fav-item-star">★</span>
                 <span className="fav-item-name">{job.jobName}</span>
-              </div>
+              </button>
               <button
                 type="button"
                 className="fav-item-remove"
@@ -88,6 +115,14 @@ export default function FavoriteJobsPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {selectedJob && (
+        <JobInfoModal
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+          onFavoriteChange={handleFavoriteChange}
+        />
       )}
     </div>
   );

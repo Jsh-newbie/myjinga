@@ -241,10 +241,11 @@ export const api = {
     });
   },
 
-  getInsightFeed(token: string, query?: { tab?: InsightFeedTab; limit?: number }) {
+  getInsightFeed(token: string, query?: { tab?: InsightFeedTab; limit?: number; keyword?: string }) {
     const params = new URLSearchParams();
     if (query?.tab) params.set('tab', query.tab);
     if (query?.limit !== undefined) params.set('limit', String(query.limit));
+    if (query?.keyword) params.set('keyword', query.keyword);
     const suffix = params.size > 0 ? `?${params.toString()}` : '';
     return request<InsightFeedResponse>(`/api/insights/feed${suffix}`, token);
   },

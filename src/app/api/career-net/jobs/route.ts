@@ -82,6 +82,13 @@ function normalizeJobListItem(raw: Record<string, unknown>) {
 // 외부 API 원시 응답
 interface RawJobReady { recruit: string; certificate: string; training: string; curriculum: string }
 
+function toAbsoluteCareerUrl(path: string | undefined): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  if (path.startsWith('/')) return `https://www.career.go.kr${path}`;
+  return `https://www.career.go.kr/${path}`;
+}
+
 function normalizeJobDetail(raw: Record<string, unknown>) {
   const base = (raw.baseInfo ?? {}) as Record<string, unknown>;
   const workList = (raw.workList ?? []) as Array<{ work: string }>;
@@ -92,10 +99,16 @@ function normalizeJobDetail(raw: Record<string, unknown>) {
   const researchList = (raw.researchList ?? []) as Array<{ research: string }>;
   const forecastList = (raw.forecastList ?? []) as Array<{ forecast: string }>;
   const jobReadyList = (raw.jobReadyList ?? []) as RawJobReady[];
+  const relJinsolList = (raw.relJinsolList ?? []) as Array<{ THUMBNAIL?: string }>;
+  const relVideoList = (raw.relVideoList ?? []) as Array<{ THUMNAIL_PATH?: string }>;
+  const imageUrl =
+    toAbsoluteCareerUrl(relJinsolList[0]?.THUMBNAIL)
+    ?? toAbsoluteCareerUrl(relVideoList[0]?.THUMNAIL_PATH);
 
   return {
     jobCode: base.job_cd,
     jobName: base.job_nm,
+    imageUrl,
     work: workList.map((w) => w.work),
     wage: base.wage,
     wlb: base.wlb,
