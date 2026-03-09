@@ -3,6 +3,7 @@ import type { UserProfile } from '@/types/user';
 import type { NormalizedQuestionnaire, TestResultWithId, TestSessionWithId } from '@/lib/careernet/types';
 import type { StudentRecord } from '@/types/record';
 import type { InsightFeedResponse, InsightFeedTab, InsightSave } from '@/types/insight';
+import type { MajorListItem, MajorDetail } from '@/lib/careernet/major-types';
 
 export interface SessionItem {
   sessionId: string;
@@ -304,5 +305,24 @@ export const api = {
     return request<{ deleted: boolean }>(`/api/insights/saves/${saveId}`, token, {
       method: 'DELETE',
     });
+  },
+
+  // --- 학과 탐색 ---
+
+  exploreMajors(token: string, query?: { q?: string; field?: string; page?: number; perPage?: number }) {
+    const params = new URLSearchParams();
+    if (query?.q) params.set('q', query.q);
+    if (query?.field) params.set('field', query.field);
+    if (query?.page !== undefined) params.set('page', String(query.page));
+    if (query?.perPage !== undefined) params.set('perPage', String(query.perPage));
+    const suffix = params.size > 0 ? `?${params.toString()}` : '';
+    return request<{ items: MajorListItem[]; totalCount: number; page: number; perPage: number }>(
+      `/api/explore/majors${suffix}`,
+      token,
+    );
+  },
+
+  getMajorDetail(token: string, majorSeq: string) {
+    return request<{ major: MajorDetail }>(`/api/explore/majors/${majorSeq}`, token);
   },
 };

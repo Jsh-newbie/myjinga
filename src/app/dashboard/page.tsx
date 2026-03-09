@@ -258,40 +258,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Bottom Nav */}
-      <BottomNav />
+      {/* Bottom Nav는 AppShell에서 전역 렌더링 */}
     </div>
-  );
-}
-
-function BottomNav() {
-  return (
-    <nav className="main-bottom-nav">
-      <Link href="/dashboard" className="main-nav-item main-nav-item--active">
-        <span className="main-nav-icon">
-          <HomeIcon />
-        </span>
-        홈
-      </Link>
-      <Link href="/career-test" className="main-nav-item">
-        <span className="main-nav-icon">
-          <TestIcon />
-        </span>
-        검사
-      </Link>
-      <Link href="/records" className="main-nav-item">
-        <span className="main-nav-icon">
-          <RecordIcon />
-        </span>
-        기록
-      </Link>
-      <Link href="/explore" className="main-nav-item">
-        <span className="main-nav-icon">
-          <ExploreIcon />
-        </span>
-        탐색
-      </Link>
-    </nav>
   );
 }
 
@@ -331,7 +299,6 @@ function MainSkeleton() {
           <div key={i} className="main-skeleton" style={{ height: 80, borderRadius: 14 }} />
         ))}
       </div>
-      <BottomNav />
     </div>
   );
 }
