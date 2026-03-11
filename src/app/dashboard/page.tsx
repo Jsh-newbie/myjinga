@@ -1,15 +1,41 @@
 'use client';
 
 import Link from 'next/link';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { getClientAuth } from '@/lib/firebase/client';
-import { api, type SessionItem } from '@/lib/api/client';
+import {
+  api,
+  type DashboardBootstrap,
+  type RecordListItem,
+  type ResultItem,
+  type SessionItem,
+} from '@/lib/api/client';
+import {
+  deriveBanner,
+  deriveGreeting,
+  deriveHero,
+  deriveRoadmapSteps,
+  type BannerType,
+  type HeroType,
+  type RoadmapStep,
+} from '@/lib/dashboard/ux';
+import { normalizeInsightSourceUrl } from '@/lib/insights/source-url';
+import type { InsightFeedItem } from '@/types/insight';
 import type { UserProfile } from '@/types/user';
 
 type LoadingState = 'loading' | 'ready' | 'error';
+
+const dashboardBootstrapRequestCache = new Map<
+  string,
+  Promise<Awaited<ReturnType<typeof api.getDashboardBootstrap>>>
+>();
+const dashboardInsightRequestCache = new Map<
+  string,
+  Promise<Awaited<ReturnType<typeof api.getInsightFeed>>>
+>();
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -18,7 +44,15 @@ export default function DashboardPage() {
   const [state, setState] = useState<LoadingState>('loading');
   const [error, setError] = useState('');
   const [inProgressSessions, setInProgressSessions] = useState<SessionItem[]>([]);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [insightItems, setInsightItems] = useState<InsightFeedItem[]>([]);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [completedResults, setCompletedResults] = useState<ResultItem[]>([]);
+  const [favoriteJobNames, setFavoriteJobNames] = useState<string[]>([]);
+  const [favoriteMajorNames, setFavoriteMajorNames] = useState<string[]>([]);
+  const [recentRecord, setRecentRecord] = useState<RecordListItem | null>(null);
+  const [savedInsightCount, setSavedInsightCount] = useState(0);
+  const lastLoadedUidRef = useRef<string | null>(null);
+  const lastInsightUidRef = useRef<string | null>(null);
 
   const auth = useMemo(() => {
     try {
@@ -30,12 +64,69 @@ export default function DashboardPage() {
     }
   }, []);
 
+  function applyBootstrap(data: DashboardBootstrap) {
+    const nextProfile = data.profile as UserProfile;
+
+    setProfile(nextProfile);
+    setInProgressSessions(data.sessions);
+    setCompletedResults(data.results);
+    setFavoriteJobNames(data.favoriteJobNames);
+    setFavoriteMajorNames(data.favoriteMajorNames);
+    setRecentRecord(data.recentRecord);
+    setSavedInsightCount(data.savedInsightCount);
+    setState('ready');
+    lastLoadedUidRef.current = data.uid;
+  }
+
   useEffect(() => {
-    if (!auth) {
-      return;
+    if (!auth) return;
+
+    let active = true;
+
+    async function loadInsights(token: string, uid: string) {
+      if (!active) return;
+
+      if (lastInsightUidRef.current === uid) {
+        return;
+      }
+
+      setInsightLoading(true);
+
+      try {
+        let insightRequest = dashboardInsightRequestCache.get(token);
+        if (!insightRequest) {
+          insightRequest = api.getInsightFeed(token, { tab: 'all', limit: 6 });
+          dashboardInsightRequestCache.set(token, insightRequest);
+        }
+
+        const insightResult = await insightRequest;
+        dashboardInsightRequestCache.delete(token);
+
+        if (!active || !insightResult.success) {
+          return;
+        }
+
+        const shuffledInsightItems = [...insightResult.data.items];
+        for (let index = shuffledInsightItems.length - 1; index > 0; index -= 1) {
+          const swapIndex = Math.floor(Math.random() * (index + 1));
+          [shuffledInsightItems[index], shuffledInsightItems[swapIndex]] = [
+            shuffledInsightItems[swapIndex],
+            shuffledInsightItems[index],
+          ];
+        }
+
+        setInsightItems(shuffledInsightItems);
+        lastInsightUidRef.current = uid;
+      } finally {
+        if (active) {
+          setInsightLoading(false);
+        }
+      }
     }
 
-    const unsub = onAuthStateChanged(auth, async (nextUser) => {
+    async function loadDashboard(nextUser: User | null) {
+      if (!active) return;
+
       if (!nextUser) {
         router.replace('/auth/signin');
         return;
@@ -45,56 +136,91 @@ export default function DashboardPage() {
 
       try {
         const token = await nextUser.getIdToken();
-        const meResult = await api.getMe(token);
 
-        if (!meResult.success) {
+        if (lastLoadedUidRef.current === nextUser.uid) {
+          void loadInsights(token, nextUser.uid);
+          return;
+        }
+
+        let bootstrapRequest = dashboardBootstrapRequestCache.get(token);
+        if (!bootstrapRequest) {
+          bootstrapRequest = api.getDashboardBootstrap(token);
+          dashboardBootstrapRequestCache.set(token, bootstrapRequest);
+        }
+
+        const bootstrapResult = await bootstrapRequest;
+        dashboardBootstrapRequestCache.delete(token);
+
+        if (!bootstrapResult.success) {
           const detailMessage =
-            typeof meResult.error?.details?.message === 'string' ? meResult.error.details.message : '';
+            typeof bootstrapResult.error?.details?.message === 'string'
+              ? bootstrapResult.error.details.message
+              : '';
           setError(
             detailMessage
-              ? `${meResult.error.message} (${detailMessage})`
-              : meResult.error.message
+              ? `${bootstrapResult.error.message} (${detailMessage})`
+              : bootstrapResult.error.message
           );
           setState('error');
           return;
         }
 
-        setProfile(meResult.data.profile as UserProfile);
-        setState('ready');
+        applyBootstrap(bootstrapResult.data);
 
-        // Load in-progress test sessions
-        try {
-          const sessResult = await api.listSessions(token);
-          if (sessResult.success) {
-            setInProgressSessions(sessResult.data.sessions);
-          }
-        } catch {
-          // silent - non-critical
-        }
+        // Insight는 bootstrap 완료 후 백그라운드로 로드
+        void loadInsights(token, nextUser.uid);
       } catch {
+        if (!active) return;
         setError('프로필 조회 중 오류가 발생했습니다.');
         setState('error');
       }
-    });
-
-    return () => unsub();
-  }, [auth, router]);
-
-  async function handleLogout() {
-    if (!auth) {
-      return;
     }
 
-    await signOut(auth);
-    router.replace('/auth/signin');
-  }
+    const initialUser = auth.currentUser;
+    if (initialUser) {
+      void loadDashboard(initialUser);
+    }
+
+    const unsub = onAuthStateChanged(auth, (nextUser) => {
+      if (initialUser && nextUser?.uid === initialUser.uid) {
+        return;
+      }
+
+      void loadDashboard(nextUser);
+    });
+
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [auth, router]);
 
   const displayName = profile?.nickname || profile?.name || user?.displayName || '';
-  const schoolLabel = profile
-    ? `${profile.schoolLevel === 'high' ? '고' : '중'}${profile.grade} 학생`
-    : '';
-  // 베타 기간 중 프리미엄 기능 비활성화
-  // const isPremium = profile?.subscription?.plan === 'premium';
+  const banner = deriveBanner({
+    sessions: inProgressSessions,
+    results: completedResults,
+    favoriteJobNames,
+    favoriteMajorNames,
+  });
+  const hero = deriveHero({
+    results: completedResults,
+    favoriteJobNames,
+    favoriteMajorNames,
+  });
+  const greeting = deriveGreeting({
+    results: completedResults,
+    favoriteJobNames,
+    favoriteMajorNames,
+    recentRecord,
+  });
+  const roadmapSteps = deriveRoadmapSteps({
+    sessions: inProgressSessions,
+    results: completedResults,
+    favoriteJobNames,
+    favoriteMajorNames,
+    recentRecord,
+    savedInsightCount,
+  });
 
   if (state === 'loading') {
     return <MainSkeleton />;
@@ -102,25 +228,25 @@ export default function DashboardPage() {
 
   return (
     <div className="main-page">
-      {/* Header */}
       <header className="main-header">
-        <span className="main-header-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span
+          className="main-header-logo"
+          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="마진가 로고" width={32} height={32} style={{ borderRadius: 8 }} />
-          <span>My <strong style={{ color: 'var(--brand-700)' }}>진로</strong> Guide</span>
+          <img
+            src="/logo.svg"
+            alt="마진가 로고"
+            width={32}
+            height={32}
+            style={{ borderRadius: 8 }}
+          />
+          <span>
+            My <strong style={{ color: 'var(--brand-700)' }}>진로</strong> Guide
+          </span>
         </span>
-        <div className="main-header-actions">
-          <button className="main-header-btn" onClick={() => setShowLogoutModal(true)} aria-label="로그아웃">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        </div>
       </header>
 
-      {/* Greeting */}
       <section className="main-greeting">
         <h1>
           {displayName ? (
@@ -131,135 +257,296 @@ export default function DashboardPage() {
             '안녕하세요'
           )}
         </h1>
-        <p>오늘도 한 걸음 더 나아가 볼까요?</p>
+        <p>{greeting.message}</p>
+        <Link href={greeting.ctaHref} className="main-greeting-link">
+          {greeting.ctaLabel}
+        </Link>
       </section>
 
-      {/* Profile card */}
-      <Link href="/profile" className="main-profile-card" style={{ cursor: 'pointer' }}>
-        <div className="main-profile-avatar">
-          {displayName ? displayName.charAt(0) : '?'}
-        </div>
-        <div className="main-profile-info">
-          <div className="main-profile-name">
-            {displayName || user?.email || '-'}
-            {' '}
-            <span className="main-plan-badge main-plan-badge--beta">
-              Beta (무료)
-            </span>
-          </div>
-          <div className="main-profile-detail">
-            {schoolLabel || user?.email || ''}
-          </div>
-        </div>
-        <span className="main-card-arrow">&rsaquo;</span>
-      </Link>
+      {error && <p className="main-error">{error}</p>}
 
-      {error && (
-        <p style={{ color: '#b91c1c', fontSize: 13, fontWeight: 600, margin: '12px 0 0' }}>{error}</p>
-      )}
+      <ContextBanner banner={banner} />
+      <HeroCard hero={hero} />
+      <OnboardingRoadmap steps={roadmapSteps} />
 
-      {/* Quick Actions */}
       <h2 className="main-section-title">바로가기</h2>
       <div className="main-quick-grid">
         <QuickItem icon={<TestIcon />} label="진로 검사" href="/career-test" />
         <QuickItem icon={<RecordIcon />} label="학생부 기록" href="/records" />
-        <QuickItem icon={<ExploreIcon />} label="학과 탐색" href="/explore" />
-        <QuickItem icon={<InsightIcon />} label="학생부 Insight" href="/ai" />
-        <QuickItem icon={<FavoriteJobIcon />} label="관심 직업" href="/favorites/jobs" />
+        <QuickItem icon={<ExploreIcon />} label="탐색 허브" href="/explore" />
+        <QuickItem icon={<StarIcon />} label="관심 직업" href="/favorites/jobs" />
         <QuickItem icon={<FavoriteMajorIcon />} label="관심 학과" href="/favorites/majors" />
+        <QuickItem icon={<InsightIcon />} label="Insight" href="/ai" />
       </div>
 
-      {/* In-progress test sessions */}
-      {inProgressSessions.length > 0 && (
+      {(inProgressSessions.length > 0 || recentRecord) && (
         <>
-          <h2 className="main-section-title">진행 중인 검사</h2>
-          {inProgressSessions.map((s) => {
-            const pct = Math.round((s.answeredCount / s.totalQuestions) * 100);
+          <h2 className="main-section-title">진행 중인 활동</h2>
+          {inProgressSessions.map((session) => {
+            const progress = Math.round((session.answeredCount / session.totalQuestions) * 100);
             return (
-              <Link key={s.sessionId} href={`/career-test/${s.testTypeId}`} className="main-card">
-                <div className="main-card-icon" style={{ background: '#dbeafe', color: '#2563eb' }}>
+              <Link
+                key={session.sessionId}
+                href={`/career-test/${session.testTypeId}`}
+                className="main-card"
+              >
+                <div
+                  className="main-card-icon"
+                  style={{ background: 'var(--brand-100)', color: 'var(--brand-700)' }}
+                >
                   <TestIcon />
                 </div>
                 <div className="main-card-body">
-                  <strong>{s.testName}</strong>
+                  <strong>{session.testName}</strong>
                   <div className="ct-progress-bar-bg" style={{ marginTop: 6 }}>
-                    <div className="ct-progress-bar-fill" style={{ width: `${pct}%` }} />
+                    <div className="ct-progress-bar-fill" style={{ width: `${progress}%` }} />
                   </div>
-                  <span>{s.answeredCount}/{s.totalQuestions} ({pct}%)</span>
+                  <span>
+                    {session.answeredCount}/{session.totalQuestions} ({progress}%)
+                  </span>
                 </div>
                 <span className="main-card-arrow">&rsaquo;</span>
               </Link>
             );
           })}
+          {recentRecord && (
+            <Link href={`/records/${recentRecord.id}`} className="main-card">
+              <div className="main-card-icon" style={{ background: '#fef9c3', color: '#a16207' }}>
+                <RecordIcon />
+              </div>
+              <div className="main-card-body">
+                <strong>{recentRecord.title || '최근 기록'}</strong>
+                <span>{recentRecord.category}</span>
+              </div>
+              <span className="main-card-arrow">&rsaquo;</span>
+            </Link>
+          )}
         </>
       )}
 
-      {/* Career Test */}
-      <h2 className="main-section-title">진로 탐색</h2>
-      <Link href="/career-test" className="main-card">
-        <div className="main-card-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
-          <TestIcon />
-        </div>
-        <div className="main-card-body">
-          <strong>커리어넷 진로 검사</strong>
-          <span>적성, 흥미, 가치관 검사로 나를 알아봐요</span>
-        </div>
-        <span className="main-card-arrow">&rsaquo;</span>
-      </Link>
-
-      {/* Records */}
-      <h2 className="main-section-title">학생부 관리</h2>
-      <Link href="/records" className="main-card">
-        <div className="main-card-icon" style={{ background: '#fef9c3', color: '#a16207' }}>
-          <RecordIcon />
-        </div>
-        <div className="main-card-body">
-          <strong>학생부 기록</strong>
-          <span>활동 기록을 작성하고 관리해요</span>
-        </div>
-        <span className="main-card-arrow">&rsaquo;</span>
-      </Link>
-      <Link href="/explore" className="main-card">
-        <div className="main-card-icon" style={{ background: 'var(--brand-100)', color: 'var(--brand-700)' }}>
-          <ExploreIcon />
-        </div>
-        <div className="main-card-body">
-          <strong>학과 / 과목 탐색</strong>
-          <span>진로에 맞는 학과와 선택과목을 찾아봐요</span>
-        </div>
-        <span className="main-card-arrow">&rsaquo;</span>
-      </Link>
-
-      {/* AI - 베타 기간 중 숨김 처리 */}
-
-      {/* Logout Modal */}
-      {showLogoutModal && (
-        <div className="logout-overlay" onClick={() => setShowLogoutModal(false)}>
-          <div className="logout-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="logout-handle" />
-            <div className="logout-icon-wrap">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+      {(insightLoading || insightItems.length > 0) && (
+        <section className="main-insight-section">
+          <div className="main-section-head">
+            <div>
+              <h2 className="main-section-title" style={{ margin: 0 }}>
+                학생부 Insight
+              </h2>
+              <p className="main-section-note">
+                {favoriteJobNames.length > 0 || favoriteMajorNames.length > 0
+                  ? '저장한 관심 진로를 바탕으로 골랐어요.'
+                  : '프로필 관심사와 기본 추천을 바탕으로 골랐어요.'}
+              </p>
             </div>
-            <h3 className="logout-title">로그아웃</h3>
-            <p className="logout-desc">정말 로그아웃 하시겠습니까?</p>
-            <div className="logout-actions">
-              <button className="logout-btn logout-btn--cancel" onClick={() => setShowLogoutModal(false)}>
-                취소
-              </button>
-              <button className="logout-btn logout-btn--confirm" onClick={handleLogout}>
-                로그아웃
-              </button>
-            </div>
+            <Link href="/ai" className="main-more-link">
+              더보기+
+            </Link>
           </div>
-        </div>
+          {insightItems.length > 0 ? (
+            <div className="main-insight-scroll">
+              {insightItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={normalizeInsightSourceUrl(item.sourceUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="main-insight-card"
+                >
+                  <span className="main-insight-source">{item.sourceName}</span>
+                  <strong className="main-insight-title">{item.title}</strong>
+                  <p className="main-insight-summary">{item.summary}</p>
+                  <div className="main-insight-tags">
+                    {item.topics.slice(0, 2).map((topic) => (
+                      <span key={topic} className="main-insight-tag">
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="main-insight-scroll" aria-hidden="true">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={`insight-skeleton-${index + 1}`}
+                  className="main-insight-card"
+                  style={{ opacity: 0.55 }}
+                >
+                  <span className="main-insight-source">Insight 불러오는 중</span>
+                  <strong className="main-insight-title">추천 콘텐츠를 준비하고 있어요.</strong>
+                  <p className="main-insight-summary">
+                    관심 진로와 최근 활동을 기준으로 맞춤 인사이트를 가져오는 중입니다.
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
-
-      {/* Bottom Nav는 AppShell에서 전역 렌더링 */}
     </div>
+  );
+}
+
+function ContextBanner({ banner }: { banner: BannerType }) {
+  if (banner.kind === 'ready') return null;
+
+  if (banner.kind === 'new-user') {
+    return (
+      <Link href="/career-test" className="main-context-banner main-context-banner--guide">
+        <span className="main-context-banner-icon">
+          <CompassIcon />
+        </span>
+        <div className="main-context-banner-body">
+          <strong>나를 알아보는 첫 걸음</strong>
+          <span>진로 검사를 시작해 볼까요?</span>
+        </div>
+        <span className="main-card-arrow">&rsaquo;</span>
+      </Link>
+    );
+  }
+
+  if (banner.kind === 'in-progress') {
+    const progress = Math.round(
+      (banner.session.answeredCount / banner.session.totalQuestions) * 100
+    );
+    return (
+      <Link
+        href={`/career-test/${banner.session.testTypeId}`}
+        className="main-context-banner main-context-banner--progress"
+      >
+        <span className="main-context-banner-icon">
+          <TestIcon />
+        </span>
+        <div className="main-context-banner-body">
+          <strong>
+            {banner.session.testName} {progress}% 진행 중
+          </strong>
+          <span>이어서 할까요?</span>
+        </div>
+        <span className="main-card-arrow">&rsaquo;</span>
+      </Link>
+    );
+  }
+
+  return (
+    <Link href="/career-test" className="main-context-banner main-context-banner--guide">
+      <span className="main-context-banner-icon">
+        <StarIcon />
+      </span>
+      <div className="main-context-banner-body">
+        <strong>검사 결과를 활용해 보세요</strong>
+        <span>관심 직업을 저장하면 맞춤 추천이 시작돼요</span>
+      </div>
+      <span className="main-card-arrow">&rsaquo;</span>
+    </Link>
+  );
+}
+
+function HeroCard({ hero }: { hero: HeroType }) {
+  if (hero.kind === 'no-test') {
+    return (
+      <section className="main-hero main-hero--cta">
+        <strong className="main-hero-heading">나의 진로를 알아볼까요?</strong>
+        <p className="main-hero-desc">진로 검사로 나의 적성, 흥미, 가치관을 탐색해 보세요</p>
+        <Link href="/career-test" className="main-hero-btn">
+          진로 검사 시작하기
+        </Link>
+      </section>
+    );
+  }
+
+  if (hero.kind === 'no-favorites') {
+    return (
+      <section className="main-hero main-hero--summary">
+        <strong className="main-hero-heading">검사 결과를 활용해 볼까요?</strong>
+        <p className="main-hero-desc">완료한 검사 결과에서 관심 가는 직업과 학과를 저장해 보세요</p>
+        <div className="main-hero-stat">
+          <span>완료 검사</span>
+          <Link href="/career-test" className="main-hero-stat-link">
+            {hero.completedCount}/5
+          </Link>
+        </div>
+        <Link href="/career-test" className="main-hero-btn">
+          결과 확인하기
+        </Link>
+      </section>
+    );
+  }
+
+  const jobSummary =
+    hero.favJobNames.length === 0
+      ? '-'
+      : hero.favJobNames.length === 1
+        ? hero.favJobNames[0]
+        : `${hero.favJobNames[0]} 외 ${hero.favJobNames.length - 1}`;
+  const majorSummary =
+    hero.favMajorNames.length === 0
+      ? '-'
+      : hero.favMajorNames.length === 1
+        ? hero.favMajorNames[0]
+        : `${hero.favMajorNames[0]} 외 ${hero.favMajorNames.length - 1}`;
+  const summaryHref = hero.favJobNames.length > 0 ? '/favorites/jobs' : '/favorites/majors';
+
+  return (
+    <section className="main-hero main-hero--summary">
+      <strong className="main-hero-heading">나의 진로 요약</strong>
+      <div className="main-hero-stats">
+        <HeroStat label="관심 직업" value={jobSummary} href="/favorites/jobs" />
+        <HeroStat label="관심 학과" value={majorSummary} href="/favorites/majors" />
+        <HeroStat label="완료 검사" value={`${hero.completedCount}/5`} href="/career-test" />
+      </div>
+      <Link href={summaryHref} className="main-hero-btn">
+        저장한 진로 보기
+      </Link>
+    </section>
+  );
+}
+
+function HeroStat({ label, value, href }: { label: string; value: string; href: string }) {
+  return (
+    <div className="main-hero-stat">
+      <span>{label}</span>
+      <Link href={href} className="main-hero-stat-link">
+        {value}
+      </Link>
+    </div>
+  );
+}
+
+function OnboardingRoadmap({ steps }: { steps: RoadmapStep[] }) {
+  const completedCount = steps.filter((step) => step.done).length;
+  const progressPercent = Math.round((completedCount / steps.length) * 100);
+
+  return (
+    <section className="main-roadmap">
+      <div className="main-roadmap-head">
+        <div>
+          <h2 className="main-roadmap-title">탐색 로드맵</h2>
+          <p className="main-roadmap-subtitle">
+            {completedCount === steps.length
+              ? '기본 탐색을 모두 완료했어요.'
+              : '다음 단계까지 한 번에 이어가 보세요.'}
+          </p>
+        </div>
+        <span className="main-roadmap-badge">
+          {completedCount}/{steps.length} 완료
+        </span>
+      </div>
+      <div className="main-roadmap-progress" aria-hidden="true">
+        <div className="main-roadmap-progress-fill" style={{ width: `${progressPercent}%` }} />
+      </div>
+      <div className="main-roadmap-list">
+        {steps.map((step, index) => (
+          <Link key={step.id} href={step.href} className="main-roadmap-item">
+            <span className={`main-roadmap-check${step.done ? ' main-roadmap-check--done' : ''}`}>
+              {step.done ? '✓' : index + 1}
+            </span>
+            <span className="main-roadmap-label">{step.label}</span>
+            <span className="main-roadmap-state">{step.done ? '완료' : '이동'}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -276,46 +563,59 @@ function MainSkeleton() {
   return (
     <div className="main-page">
       <header className="main-header">
-        <span className="main-header-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span
+          className="main-header-logo"
+          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="마진가 로고" width={32} height={32} style={{ borderRadius: 8 }} />
-          <span>My <strong style={{ color: 'var(--brand-700)' }}>진로</strong> Guide</span>
+          <img
+            src="/logo.svg"
+            alt="마진가 로고"
+            width={32}
+            height={32}
+            style={{ borderRadius: 8 }}
+          />
+          <span>
+            My <strong style={{ color: 'var(--brand-700)' }}>진로</strong> Guide
+          </span>
         </span>
       </header>
       <section className="main-greeting">
         <div className="main-skeleton" style={{ width: 180, height: 26, marginBottom: 8 }} />
-        <div className="main-skeleton" style={{ width: 140, height: 16 }} />
+        <div className="main-skeleton" style={{ width: 140, height: 16, marginBottom: 10 }} />
+        <div className="main-skeleton" style={{ width: 88, height: 28, borderRadius: 999 }} />
       </section>
-      <div className="main-profile-card">
-        <div className="main-skeleton" style={{ width: 44, height: 44, borderRadius: '50%' }} />
-        <div style={{ flex: 1 }}>
-          <div className="main-skeleton" style={{ width: 120, height: 16, marginBottom: 6 }} />
-          <div className="main-skeleton" style={{ width: 80, height: 14 }} />
-        </div>
-      </div>
-      <div className="main-skeleton" style={{ width: 60, height: 16, margin: '24px 0 10px' }} />
+      <div className="main-skeleton" style={{ height: 120, borderRadius: 18, margin: '12px 0' }} />
+      <div
+        className="main-skeleton"
+        style={{ height: 140, borderRadius: 18, margin: '0 0 16px' }}
+      />
+      <div
+        className="main-skeleton"
+        style={{ height: 170, borderRadius: 18, margin: '0 0 16px' }}
+      />
+      <div className="main-skeleton" style={{ width: 60, height: 16, margin: '0 0 10px' }} />
       <div className="main-quick-grid">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="main-skeleton" style={{ height: 80, borderRadius: 14 }} />
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <div key={item} className="main-skeleton" style={{ height: 80, borderRadius: 14 }} />
         ))}
       </div>
     </div>
   );
 }
 
-/* SVG Icons */
-function HomeIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
 function TestIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
       <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
     </svg>
@@ -324,7 +624,16 @@ function TestIcon() {
 
 function RecordIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
     </svg>
@@ -333,7 +642,16 @@ function RecordIcon() {
 
 function ExploreIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
@@ -342,30 +660,72 @@ function ExploreIcon() {
 
 function InsightIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9z" />
-      <path d="M14 3v6h6" />
-      <path d="M11.5 11.5a2.5 2.5 0 1 1 4.24 1.78c-.44.43-.74.99-.74 1.6V16h-2v-.82c0-.86.34-1.69.95-2.29a2.5 2.5 0 0 0-1.76-4.27 2.5 2.5 0 0 0-2.36 1.67" />
-      <path d="M13 19h2" />
-    </svg>
-  );
-}
-
-function FavoriteJobIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-      <line x1="12" y1="12" x2="12" y2="12.01" />
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 18h6" />
+      <path d="M10 22h4" />
+      <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" />
     </svg>
   );
 }
 
 function FavoriteMajorIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
       <path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5" />
+    </svg>
+  );
+}
+
+function CompassIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   );
 }
