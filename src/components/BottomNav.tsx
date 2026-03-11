@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: '/career-test', label: '검사', icon: TestIcon },
   { href: '/records', label: '기록', icon: RecordIcon },
   { href: '/explore', label: '탐색', icon: ExploreIcon },
+  { href: '/profile', label: 'My', icon: MyIcon },
 ] as const;
 
 export default function BottomNav() {
@@ -66,6 +67,15 @@ function ExploreIcon() {
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
+function MyIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }

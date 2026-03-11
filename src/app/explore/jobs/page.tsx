@@ -7,23 +7,55 @@ import { useRouter } from 'next/navigation';
 
 import { getClientAuth } from '@/lib/firebase/client';
 import { api } from '@/lib/api/client';
-import type { MajorListItem } from '@/lib/careernet/major-types';
-import { MAJOR_FIELDS } from '@/lib/careernet/major-types';
 
-const PER_PAGE = 20;
+/** 커리어넷 직업백과 테마 코드 */
+const JOB_THEMES = [
+  { code: '102420', name: 'AI·로봇' },
+  { code: '102421', name: 'IT·SW' },
+  { code: '102422', name: '게임' },
+  { code: '102423', name: '공학' },
+  { code: '102424', name: '건설' },
+  { code: '102425', name: '과학' },
+  { code: '102426', name: '교육' },
+  { code: '102427', name: '금융' },
+  { code: '102428', name: '디자인' },
+  { code: '102429', name: '미디어' },
+  { code: '102430', name: '법률' },
+  { code: '102431', name: '보건·의료' },
+  { code: '102432', name: '사회복지' },
+  { code: '102433', name: '스포츠' },
+  { code: '102434', name: '식품' },
+  { code: '102435', name: '여행·관광' },
+  { code: '102436', name: '예술' },
+  { code: '102437', name: '자연·환경' },
+  { code: '102438', name: '항공·우주' },
+  { code: '102439', name: '해양' },
+] as const;
 
-export default function ExploreMajorsPage() {
+interface JobListItem {
+  seq: number;
+  jobCode: number;
+  jobName: string;
+  work: string;
+  wage: string;
+  wlb: string;
+  aptitName: string;
+  relJobName: string;
+}
+
+export default function ExploreJobsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [items, setItems] = useState<MajorListItem[]>([]);
+  const [items, setItems] = useState<JobListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedField, setSelectedField] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState('');
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const hasMore = items.length < totalCount;
@@ -51,69 +83,65 @@ export default function ExploreMajorsPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const presetQuery = new URLSearchParams(window.location.search).get('q')?.trim() ?? '';
+    const presetQuery = new URLSearchParams(window.location.search).get('jobName')?.trim() ?? '';
     if (!presetQuery) return;
 
     setSearchInput((current) => (current === presetQuery ? current : presetQuery));
     setSearchQuery((current) => (current === presetQuery ? current : presetQuery));
   }, []);
 
-  /** 첫 페이지 로드 (검색/필터 변경 시) */
-  const fetchInitial = useCallback(async (u: User, q: string, field: string) => {
+  const fetchInitial = useCallback(async (u: User, q: string, theme: string) => {
     setInitialLoading(true);
     setError('');
     setItems([]);
-    setPage(1);
+    setPageIndex(1);
     try {
       const token = await u.getIdToken();
-      const res = await api.exploreMajors(token, {
-        q: q || undefined,
-        field: field || undefined,
-        page: 1,
-        perPage: PER_PAGE,
+      const res = await api.exploreJobs(token, {
+        jobName: q || undefined,
+        searchThemeCode: theme || undefined,
+        pageIndex: 1,
       });
       if (!res.success) {
         setError(res.error.message);
         return;
       }
-      setItems(res.data.items);
-      setTotalCount(res.data.totalCount);
-      setPage(1);
+      setItems(res.data.jobs);
+      setTotalCount(res.data.count);
+      setPageIndex(res.data.pageIndex);
+      setPageSize(res.data.pageSize);
     } catch {
-      setError('학과 정보를 불러오는 데 실패했습니다.');
+      setError('직업 정보를 불러오는 데 실패했습니다.');
     } finally {
       setInitialLoading(false);
     }
   }, []);
 
-  /** 다음 페이지 로드 (무한스크롤) */
-  const fetchMore = useCallback(async (u: User, q: string, field: string, nextPage: number) => {
+  const fetchMore = useCallback(async (u: User, q: string, theme: string, nextPage: number) => {
     setLoadingMore(true);
     try {
       const token = await u.getIdToken();
-      const res = await api.exploreMajors(token, {
-        q: q || undefined,
-        field: field || undefined,
-        page: nextPage,
-        perPage: PER_PAGE,
+      const res = await api.exploreJobs(token, {
+        jobName: q || undefined,
+        searchThemeCode: theme || undefined,
+        pageIndex: nextPage,
       });
       if (!res.success) return;
-      setItems((prev) => [...prev, ...res.data.items]);
-      setTotalCount(res.data.totalCount);
-      setPage(nextPage);
+      setItems((prev) => [...prev, ...res.data.jobs]);
+      setTotalCount(res.data.count);
+      setPageIndex(res.data.pageIndex);
+      setPageSize(res.data.pageSize);
     } catch {
-      // silent - 스크롤 시 재시도 가능
+      // silent
     } finally {
       setLoadingMore(false);
     }
   }, []);
 
-  // 검색/필터 변경 시 첫 페이지 로드
   useEffect(() => {
-    if (user) fetchInitial(user, searchQuery, selectedField);
-  }, [user, searchQuery, selectedField, fetchInitial]);
+    if (user) fetchInitial(user, searchQuery, selectedTheme);
+  }, [user, searchQuery, selectedTheme, fetchInitial]);
 
-  // IntersectionObserver로 무한스크롤
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -121,7 +149,7 @@ export default function ExploreMajorsPage() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loadingMore && !initialLoading && user) {
-          fetchMore(user, searchQuery, selectedField, page + 1);
+          fetchMore(user, searchQuery, selectedTheme, pageIndex + 1);
         }
       },
       { rootMargin: '200px' }
@@ -129,15 +157,24 @@ export default function ExploreMajorsPage() {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, initialLoading, user, searchQuery, selectedField, page, fetchMore]);
+  }, [
+    hasMore,
+    loadingMore,
+    initialLoading,
+    user,
+    searchQuery,
+    selectedTheme,
+    pageIndex,
+    fetchMore,
+  ]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearchQuery(searchInput.trim());
   }
 
-  function handleFieldSelect(code: string) {
-    setSelectedField(code === selectedField ? '' : code);
+  function handleThemeSelect(code: string) {
+    setSelectedTheme(code === selectedTheme ? '' : code);
   }
 
   return (
@@ -158,8 +195,21 @@ export default function ExploreMajorsPage() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1 className="explore-title">학과 탐색</h1>
-        <div style={{ width: 24 }} />
+        <h1 className="explore-title">직업 탐색</h1>
+        <Link href="/favorites/jobs" className="explore-fav-link" aria-label="관심 직업 목록">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        </Link>
       </header>
 
       {/* Search */}
@@ -167,7 +217,7 @@ export default function ExploreMajorsPage() {
         <input
           type="text"
           className="explore-search-input"
-          placeholder="학과명 검색 (예: 컴퓨터, 경영, 의학)"
+          placeholder="직업명 검색 (예: 소프트웨어, 의사, 교사)"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
@@ -188,15 +238,15 @@ export default function ExploreMajorsPage() {
         </button>
       </form>
 
-      {/* Field filters */}
+      {/* Theme filters */}
       <div className="explore-fields">
-        {MAJOR_FIELDS.map((f) => (
+        {JOB_THEMES.map((t) => (
           <button
-            key={f.code}
-            className={`explore-field-chip${selectedField === f.code ? ' explore-field-chip--active' : ''}`}
-            onClick={() => handleFieldSelect(f.code)}
+            key={t.code}
+            className={`explore-field-chip${selectedTheme === t.code ? ' explore-field-chip--active' : ''}`}
+            onClick={() => handleThemeSelect(t.code)}
           >
-            {f.name}
+            {t.name}
           </button>
         ))}
       </div>
@@ -205,7 +255,7 @@ export default function ExploreMajorsPage() {
       {!initialLoading && !error && (
         <p className="explore-result-count">
           {searchQuery && <span>&ldquo;{searchQuery}&rdquo; </span>}총 <strong>{totalCount}</strong>
-          개 학과
+          개 직업
         </p>
       )}
 
@@ -215,7 +265,7 @@ export default function ExploreMajorsPage() {
           <p>{error}</p>
           <button
             className="explore-retry-btn"
-            onClick={() => user && fetchInitial(user, searchQuery, selectedField)}
+            onClick={() => user && fetchInitial(user, searchQuery, selectedTheme)}
           >
             다시 시도
           </button>
@@ -244,19 +294,27 @@ export default function ExploreMajorsPage() {
         <div className="explore-list">
           {items.map((item) => (
             <Link
-              key={item.majorSeq}
-              href={`/explore/majors/${item.majorSeq}?field=${encodeURIComponent(item.field)}`}
-              className="explore-card"
+              key={item.seq}
+              href={`/explore/jobs/${item.seq}`}
+              className="explore-card explore-card--job"
             >
-              <span className="explore-card-field">{item.field}</span>
-              <h3 className="explore-card-name">{item.name}</h3>
+              <h3 className="explore-card-name">{item.jobName}</h3>
+              {item.work && (
+                <p className="explore-card-desc">
+                  {item.work.length > 80 ? `${item.work.slice(0, 80)}…` : item.work}
+                </p>
+              )}
+              <div className="explore-card-meta">
+                {item.wage && <span className="explore-card-tag">연봉 {item.wage}</span>}
+                {item.aptitName && <span className="explore-card-tag">{item.aptitName}</span>}
+              </div>
               <span className="explore-card-arrow">&rsaquo;</span>
             </Link>
           ))}
         </div>
       )}
 
-      {/* Loading more indicator */}
+      {/* Loading more */}
       {loadingMore && (
         <div className="explore-loading-more">
           <div className="explore-spinner" />
@@ -266,7 +324,6 @@ export default function ExploreMajorsPage() {
       {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} style={{ height: 1 }} />
 
-      {/* Bottom spacing for nav */}
       <div style={{ height: 80 }} />
     </div>
   );

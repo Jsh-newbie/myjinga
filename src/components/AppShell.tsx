@@ -23,7 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {children}
+      <div className={showNav ? 'app-shell-content' : undefined}>{children}</div>
       {showNav && <BottomNav />}
     </>
   );

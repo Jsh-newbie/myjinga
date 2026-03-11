@@ -1,6 +1,10 @@
 import type { ApiResponse } from '@/types/api';
 import type { UserProfile } from '@/types/user';
-import type { NormalizedQuestionnaire, TestResultWithId, TestSessionWithId } from '@/lib/careernet/types';
+import type {
+  NormalizedQuestionnaire,
+  TestResultWithId,
+  TestSessionWithId,
+} from '@/lib/careernet/types';
 import type { StudentRecord } from '@/types/record';
 import type { InsightFeedResponse, InsightFeedTab, InsightSave } from '@/types/insight';
 import type { MajorListItem, MajorDetail } from '@/lib/careernet/major-types';
@@ -53,6 +57,17 @@ export interface SessionSaveRequest {
   totalQuestions: number;
 }
 
+export interface DashboardBootstrap {
+  uid: string;
+  profile: UserProfile;
+  sessions: SessionItem[];
+  results: ResultItem[];
+  favoriteJobNames: string[];
+  favoriteMajorNames: string[];
+  recentRecord: RecordListItem | null;
+  savedInsightCount: number;
+}
+
 async function request<T>(
   path: string,
   token: string,
@@ -78,20 +93,27 @@ async function request<T>(
 }
 
 export const api = {
+  getDashboardBootstrap(token: string) {
+    return request<DashboardBootstrap>('/api/dashboard/bootstrap', token);
+  },
+
   getMe(token: string) {
     return request<{ uid: string; profile: UserProfile }>('/api/users/me', token);
   },
 
-  updateProfile(token: string, data: {
-    nickname?: string;
-    birthDate?: string;
-    schoolLevel?: string;
-    grade?: number;
-    schoolName?: string;
-    interests?: string[];
-    phoneNumber?: string;
-    phoneVerified?: boolean;
-  }) {
+  updateProfile(
+    token: string,
+    data: {
+      nickname?: string;
+      birthDate?: string;
+      schoolLevel?: string;
+      grade?: number;
+      schoolName?: string;
+      interests?: string[];
+      phoneNumber?: string;
+      phoneVerified?: boolean;
+    }
+  ) {
     return request<{ uid: string; profile: UserProfile }>('/api/users/me', token, {
       method: 'PATCH',
       body: data,
@@ -109,7 +131,10 @@ export const api = {
     return request<{ schools: SchoolSearchItem[] }>(`/api/schools/search?${params}`, token);
   },
 
-  initUser(token: string, data: { email: string; name: string; birthDate: string; schoolLevel: string; grade: number }) {
+  initUser(
+    token: string,
+    data: { email: string; name: string; birthDate: string; schoolLevel: string; grade: number }
+  ) {
     return request<{ uid: string; profile: UserProfile }>('/api/users/init', token, {
       method: 'POST',
       body: data,
@@ -117,7 +142,10 @@ export const api = {
   },
 
   getQuestions(token: string, testTypeId: string) {
-    return request<NormalizedQuestionnaire>(`/api/career-net/questions?testTypeId=${testTypeId}`, token);
+    return request<NormalizedQuestionnaire>(
+      `/api/career-net/questions?testTypeId=${testTypeId}`,
+      token
+    );
   },
 
   listSessions(token: string) {
@@ -151,25 +179,62 @@ export const api = {
   },
 
   submitTest(token: string, sessionId: string) {
-    return request<{ resultId: string; resultUrl: string; inspctSeq: string }>('/api/career-net/report', token, {
-      method: 'POST',
-      body: { sessionId },
-    });
-  },
-
-  getJobDetail(token: string, jobCode: number) {
-    return request<{ job: Record<string, unknown> }>(`/api/career-net/jobs?jobCode=${jobCode}`, token);
-  },
-
-  searchJobs(token: string, jobName: string) {
-    return request<{ jobs: Array<{ seq: number; jobCode: number; jobName: string; work: string }>; count: number }>(
-      `/api/career-net/jobs?jobName=${encodeURIComponent(jobName)}`,
+    return request<{ resultId: string; resultUrl: string; inspctSeq: string }>(
+      '/api/career-net/report',
       token,
+      {
+        method: 'POST',
+        body: { sessionId },
+      }
     );
   },
 
+  getJobDetail(token: string, jobCode: number) {
+    return request<{ job: Record<string, unknown> }>(
+      `/api/career-net/jobs?jobCode=${jobCode}`,
+      token
+    );
+  },
+
+  searchJobs(token: string, jobName: string) {
+    return request<{
+      jobs: Array<{ seq: number; jobCode: number; jobName: string; work: string }>;
+      count: number;
+    }>(`/api/career-net/jobs?jobName=${encodeURIComponent(jobName)}`, token);
+  },
+
+  exploreJobs(
+    token: string,
+    query?: { jobName?: string; searchThemeCode?: string; searchJobCd?: string; pageIndex?: number }
+  ) {
+    const params = new URLSearchParams();
+    if (query?.jobName) params.set('jobName', query.jobName);
+    if (query?.searchThemeCode) params.set('searchThemeCode', query.searchThemeCode);
+    if (query?.searchJobCd) params.set('searchJobCd', query.searchJobCd);
+    if (query?.pageIndex !== undefined) params.set('pageIndex', String(query.pageIndex));
+    const suffix = params.size > 0 ? `?${params.toString()}` : '';
+    return request<{
+      jobs: Array<{
+        seq: number;
+        jobCode: number;
+        jobName: string;
+        work: string;
+        wage: string;
+        wlb: string;
+        aptitName: string;
+        relJobName: string;
+      }>;
+      count: number;
+      pageIndex: number;
+      pageSize: number;
+    }>(`/api/career-net/jobs${suffix}`, token);
+  },
+
   listFavoriteJobs(token: string) {
-    return request<{ jobs: Array<{ jobCode: string; jobName: string }> }>('/api/career-net/favorite-jobs', token);
+    return request<{ jobs: Array<{ jobCode: string; jobName: string }> }>(
+      '/api/career-net/favorite-jobs',
+      token
+    );
   },
 
   addFavoriteJob(token: string, jobCode: number, jobName: string) {
@@ -180,34 +245,52 @@ export const api = {
   },
 
   removeFavoriteJob(token: string, jobCode: number) {
-    return request<{ deleted: boolean }>(`/api/career-net/favorite-jobs?jobCode=${jobCode}`, token, {
-      method: 'DELETE',
-    });
+    return request<{ deleted: boolean }>(
+      `/api/career-net/favorite-jobs?jobCode=${jobCode}`,
+      token,
+      {
+        method: 'DELETE',
+      }
+    );
   },
 
   listFavoriteMajors(token: string) {
-    return request<{ majors: Array<{ majorId: string; majorName: string }> }>('/api/career-net/favorite-majors', token);
+    return request<{ majors: Array<{ majorId: string; majorName: string }> }>(
+      '/api/career-net/favorite-majors',
+      token
+    );
   },
 
   addFavoriteMajor(token: string, majorName: string) {
-    return request<{ majorId: string; majorName: string }>('/api/career-net/favorite-majors', token, {
-      method: 'POST',
-      body: { majorName },
-    });
+    return request<{ majorId: string; majorName: string }>(
+      '/api/career-net/favorite-majors',
+      token,
+      {
+        method: 'POST',
+        body: { majorName },
+      }
+    );
   },
 
   removeFavoriteMajor(token: string, majorId: string) {
-    return request<{ deleted: boolean }>(`/api/career-net/favorite-majors?majorId=${encodeURIComponent(majorId)}`, token, {
-      method: 'DELETE',
-    });
+    return request<{ deleted: boolean }>(
+      `/api/career-net/favorite-majors?majorId=${encodeURIComponent(majorId)}`,
+      token,
+      {
+        method: 'DELETE',
+      }
+    );
   },
 
-  listRecords(token: string, query?: {
-    category?: string;
-    semester?: string;
-    limit?: number;
-    cursor?: string;
-  }) {
+  listRecords(
+    token: string,
+    query?: {
+      category?: string;
+      semester?: string;
+      limit?: number;
+      cursor?: string;
+    }
+  ) {
     const params = new URLSearchParams();
     if (query?.category) params.set('category', query.category);
     if (query?.semester) params.set('semester', query.semester);
@@ -215,7 +298,10 @@ export const api = {
     if (query?.cursor) params.set('cursor', query.cursor);
 
     const suffix = params.size > 0 ? `?${params.toString()}` : '';
-    return request<{ items: RecordListItem[]; nextCursor: string | null }>(`/api/records${suffix}`, token);
+    return request<{ items: RecordListItem[]; nextCursor: string | null }>(
+      `/api/records${suffix}`,
+      token
+    );
   },
 
   getRecord(token: string, recordId: string) {
@@ -242,7 +328,10 @@ export const api = {
     });
   },
 
-  getInsightFeed(token: string, query?: { tab?: InsightFeedTab; limit?: number; keyword?: string }) {
+  getInsightFeed(
+    token: string,
+    query?: { tab?: InsightFeedTab; limit?: number; keyword?: string }
+  ) {
     const params = new URLSearchParams();
     if (query?.tab) params.set('tab', query.tab);
     if (query?.limit !== undefined) params.set('limit', String(query.limit));
@@ -251,7 +340,10 @@ export const api = {
     return request<InsightFeedResponse>(`/api/insights/feed${suffix}`, token);
   },
 
-  listInsightSaves(token: string, query?: { status?: 'active' | 'used' | 'archived'; limit?: number }) {
+  listInsightSaves(
+    token: string,
+    query?: { status?: 'active' | 'used' | 'archived'; limit?: number }
+  ) {
     const params = new URLSearchParams();
     if (query?.status) params.set('status', query.status);
     if (query?.limit !== undefined) params.set('limit', String(query.limit));
@@ -309,7 +401,10 @@ export const api = {
 
   // --- 학과 탐색 ---
 
-  exploreMajors(token: string, query?: { q?: string; field?: string; page?: number; perPage?: number }) {
+  exploreMajors(
+    token: string,
+    query?: { q?: string; field?: string; page?: number; perPage?: number }
+  ) {
     const params = new URLSearchParams();
     if (query?.q) params.set('q', query.q);
     if (query?.field) params.set('field', query.field);
@@ -318,7 +413,7 @@ export const api = {
     const suffix = params.size > 0 ? `?${params.toString()}` : '';
     return request<{ items: MajorListItem[]; totalCount: number; page: number; perPage: number }>(
       `/api/explore/majors${suffix}`,
-      token,
+      token
     );
   },
 

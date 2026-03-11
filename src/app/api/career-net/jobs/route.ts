@@ -10,11 +10,17 @@ const TIMEOUT_MS = 10000;
 const searchSchema = z.object({
   jobName: z.string().min(1).optional(),
   jobCode: z.coerce.number().int().optional(),
+  searchThemeCode: z.string().optional(),
+  searchJobCd: z.string().optional(),
+  pageIndex: z.coerce.number().int().min(1).optional(),
 });
 
 /**
- * GET /api/career-net/jobs?jobName=소프트웨어&jobCode=123
- * 직업백과 검색 (이름 또는 코드)
+ * GET /api/career-net/jobs
+ * - ?jobCode=123          → 상세 조회
+ * - ?jobName=소프트웨어    → 이름 검색
+ * - ?searchThemeCode=102420&pageIndex=1 → 테마 필터
+ * - (파라미터 없이)        → 전체 목록
  */
 export async function GET(req: NextRequest) {
   const auth = await verifyBearerToken();
@@ -30,13 +36,10 @@ export async function GET(req: NextRequest) {
   const params = Object.fromEntries(req.nextUrl.searchParams.entries());
   const parsed = searchSchema.safeParse(params);
   if (!parsed.success) {
-    return fail({ code: 'VALIDATION_ERROR', message: '검색어 또는 직업코드가 필요합니다.' }, 400);
+    return fail({ code: 'VALIDATION_ERROR', message: '잘못된 요청 파라미터입니다.' }, 400);
   }
 
-  const { jobName, jobCode } = parsed.data;
-  if (!jobName && jobCode == null) {
-    return fail({ code: 'VALIDATION_ERROR', message: 'jobName 또는 jobCode 중 하나가 필요합니다.' }, 400);
-  }
+  const { jobName, jobCode, searchThemeCode, searchJobCd, pageIndex } = parsed.data;
 
   try {
     // 직업코드가 있으면 상세 조회
@@ -50,15 +53,26 @@ export async function GET(req: NextRequest) {
       return ok({ job: normalizeJobDetail(raw) });
     }
 
-    // 이름 검색
-    const url = `${CAREERNET_BASE}/jobs.json?apiKey=${encodeURIComponent(apiKey)}&searchJobNm=${encodeURIComponent(jobName!)}`;
+    // 목록 검색 (이름, 테마, 직업분류, 전체)
+    const listParams = new URLSearchParams({ apiKey });
+    if (jobName) listParams.set('searchJobNm', jobName);
+    if (searchThemeCode) listParams.set('searchThemeCode', searchThemeCode);
+    if (searchJobCd) listParams.set('searchJobCd', searchJobCd);
+    if (pageIndex) listParams.set('pageIndex', String(pageIndex));
+
+    const url = `${CAREERNET_BASE}/jobs.json?${listParams.toString()}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) {
       return fail({ code: 'EXTERNAL_API_ERROR', message: '커리어넷 직업백과 검색 실패' }, 502);
     }
     const raw = await res.json() as Record<string, unknown>;
     const jobs = ((raw.jobs ?? []) as Record<string, unknown>[]).map(normalizeJobListItem);
-    return ok({ jobs, count: raw.count ?? jobs.length });
+    return ok({
+      jobs,
+      count: Number(raw.count ?? jobs.length),
+      pageIndex: Number(raw.pageIndex ?? 1),
+      pageSize: Number(raw.pageSize ?? 10),
+    });
   } catch (err) {
     console.error('[career-net/jobs] fetch error', err);
     return fail({ code: 'EXTERNAL_API_ERROR', message: '커리어넷 API 호출 중 오류가 발생했습니다.' }, 502);
@@ -68,14 +82,14 @@ export async function GET(req: NextRequest) {
 // 외부 API 원시 응답
 function normalizeJobListItem(raw: Record<string, unknown>) {
   return {
-    seq: raw.seq,
-    jobCode: raw.job_cd,
-    jobName: raw.job_nm,
-    work: raw.work,
-    wage: raw.wage,
-    wlb: raw.wlb,
-    aptitName: raw.aptit_name,
-    relJobName: raw.rel_job_nm,
+    seq: Number(raw.seq),
+    jobCode: Number(raw.job_cd),
+    jobName: String(raw.job_nm ?? ''),
+    work: String(raw.work ?? ''),
+    wage: String(raw.wage ?? ''),
+    wlb: String(raw.wlb ?? ''),
+    aptitName: String(raw.aptit_name ?? ''),
+    relJobName: String(raw.rel_job_nm ?? ''),
   };
 }
 

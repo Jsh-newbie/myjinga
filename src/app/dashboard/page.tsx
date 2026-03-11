@@ -515,37 +515,78 @@ function HeroStat({ label, value, href }: { label: string; value: string; href: 
 
 function OnboardingRoadmap({ steps }: { steps: RoadmapStep[] }) {
   const completedCount = steps.filter((step) => step.done).length;
+  const allDone = completedCount === steps.length;
   const progressPercent = Math.round((completedCount / steps.length) * 100);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('roadmap-collapsed') === '1';
+  });
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      window.localStorage.setItem('roadmap-collapsed', next ? '1' : '0');
+      return next;
+    });
+  }
 
   return (
     <section className="main-roadmap">
-      <div className="main-roadmap-head">
+      <button
+        type="button"
+        className="main-roadmap-head main-roadmap-head--toggle"
+        onClick={allDone ? toggleCollapsed : undefined}
+        aria-expanded={!collapsed}
+      >
         <div>
           <h2 className="main-roadmap-title">탐색 로드맵</h2>
           <p className="main-roadmap-subtitle">
-            {completedCount === steps.length
+            {allDone
               ? '기본 탐색을 모두 완료했어요.'
               : '다음 단계까지 한 번에 이어가 보세요.'}
           </p>
         </div>
         <span className="main-roadmap-badge">
           {completedCount}/{steps.length} 완료
+          {allDone && (
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                marginLeft: 4,
+                transition: 'transform 0.2s',
+                transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+              }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
         </span>
-      </div>
-      <div className="main-roadmap-progress" aria-hidden="true">
-        <div className="main-roadmap-progress-fill" style={{ width: `${progressPercent}%` }} />
-      </div>
-      <div className="main-roadmap-list">
-        {steps.map((step, index) => (
-          <Link key={step.id} href={step.href} className="main-roadmap-item">
-            <span className={`main-roadmap-check${step.done ? ' main-roadmap-check--done' : ''}`}>
-              {step.done ? '✓' : index + 1}
-            </span>
-            <span className="main-roadmap-label">{step.label}</span>
-            <span className="main-roadmap-state">{step.done ? '완료' : '이동'}</span>
-          </Link>
-        ))}
-      </div>
+      </button>
+      {!collapsed && (
+        <>
+          <div className="main-roadmap-progress" aria-hidden="true">
+            <div className="main-roadmap-progress-fill" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <div className="main-roadmap-list">
+            {steps.map((step, index) => (
+              <Link key={step.id} href={step.href} className="main-roadmap-item">
+                <span className={`main-roadmap-check${step.done ? ' main-roadmap-check--done' : ''}`}>
+                  {step.done ? '✓' : index + 1}
+                </span>
+                <span className="main-roadmap-label">{step.label}</span>
+                <span className="main-roadmap-state">{step.done ? '완료' : '이동'}</span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

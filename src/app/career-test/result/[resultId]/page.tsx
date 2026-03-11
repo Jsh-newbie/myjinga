@@ -37,7 +37,10 @@ export default function CareerTestResultPage() {
   useEffect(() => {
     if (!auth) return;
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (!u) { router.replace('/auth/signin'); return; }
+      if (!u) {
+        router.replace('/auth/signin');
+        return;
+      }
       setUser(u);
     });
     return () => unsub();
@@ -68,6 +71,8 @@ export default function CareerTestResultPage() {
 
   const meta = result?.testTypeId ? CAREER_TESTS[result.testTypeId] : null;
   const detail = result?.reportDetail;
+  const recommendedJobName = detail?.recommendedJobs?.[0]?.name?.trim() ?? '';
+  const recommendedMajorName = detail?.recommendedMajors?.[0]?.name?.trim() ?? '';
   const completedDate = result?.completedAt
     ? new Date(result.completedAt._seconds * 1000).toLocaleDateString('ko-KR', {
         year: 'numeric',
@@ -76,13 +81,14 @@ export default function CareerTestResultPage() {
       })
     : '';
 
-  const normalizedRealms = useMemo(() =>
-    (detail?.realms ?? []).map((r) => ({
-      ...r,
-      percentile: numify(r.percentile),
-      tScore: numify(r.tScore),
-      rawScore: numify(r.rawScore),
-    })),
+  const normalizedRealms = useMemo(
+    () =>
+      (detail?.realms ?? []).map((r) => ({
+        ...r,
+        percentile: numify(r.percentile),
+        tScore: numify(r.tScore),
+        rawScore: numify(r.rawScore),
+      })),
     [detail?.realms]
   );
 
@@ -90,7 +96,9 @@ export default function CareerTestResultPage() {
     return (
       <div className="ct-page">
         <header className="ct-header">
-          <Link href="/career-test" className="ct-back">&lsaquo;</Link>
+          <Link href="/career-test" className="ct-back">
+            &lsaquo;
+          </Link>
           <span className="ct-header-title">검사 결과</span>
           <span />
         </header>
@@ -105,7 +113,9 @@ export default function CareerTestResultPage() {
     return (
       <div className="ct-page">
         <header className="ct-header">
-          <Link href="/career-test" className="ct-back">&lsaquo;</Link>
+          <Link href="/career-test" className="ct-back">
+            &lsaquo;
+          </Link>
           <span className="ct-header-title">검사 결과</span>
           <span />
         </header>
@@ -121,13 +131,17 @@ export default function CareerTestResultPage() {
     return (
       <div className="ct-page">
         <header className="ct-header">
-          <Link href="/career-test" className="ct-back">&lsaquo;</Link>
+          <Link href="/career-test" className="ct-back">
+            &lsaquo;
+          </Link>
           <span className="ct-header-title">검사 결과</span>
           <span />
         </header>
         <div className="ctr-empty">
           <p>검사 결과를 찾을 수 없습니다.</p>
-          <Link href="/career-test" className="ctr-back-link">검사 목록으로 돌아가기</Link>
+          <Link href="/career-test" className="ctr-back-link">
+            검사 목록으로 돌아가기
+          </Link>
         </div>
       </div>
     );
@@ -136,7 +150,9 @@ export default function CareerTestResultPage() {
   return (
     <div className="ct-page">
       <header className="ct-header">
-        <Link href="/career-test" className="ct-back">&lsaquo;</Link>
+        <Link href="/career-test" className="ct-back">
+          &lsaquo;
+        </Link>
         <span className="ct-header-title">검사 결과</span>
         <span />
       </header>
@@ -168,11 +184,16 @@ export default function CareerTestResultPage() {
       )}
 
       {/* 데이터가 아예 없는 경우 */}
-      {detail && normalizedRealms.length === 0 && !detail.interestProfiles && !detail.valuesHierarchy && (
-        <section className="ctr-recommend">
-          <p className="ctr-empty-detail">상세 결과를 불러오는 중입니다. 잠시 후 다시 확인해 주세요.</p>
-        </section>
-      )}
+      {detail &&
+        normalizedRealms.length === 0 &&
+        !detail.interestProfiles &&
+        !detail.valuesHierarchy && (
+          <section className="ctr-recommend">
+            <p className="ctr-empty-detail">
+              상세 결과를 불러오는 중입니다. 잠시 후 다시 확인해 주세요.
+            </p>
+          </section>
+        )}
 
       {/* 커리어넷 상세 결과 링크 */}
       <section className="ctr-report-card">
@@ -197,16 +218,38 @@ export default function CareerTestResultPage() {
           <span>다른 검사도 해보기</span>
           <span className="ct-test-arrow">&rsaquo;</span>
         </Link>
-        <div className="ctr-action-card ctr-action-card--disabled">
-          <span className="ctr-action-icon">{'\uD83D\uDD0D'}</span>
-          <span>결과 기반 직업 탐색하기</span>
-          <span className="ctr-badge-soon">준비 중</span>
-        </div>
-        <div className="ctr-action-card ctr-action-card--disabled">
-          <span className="ctr-action-icon">{'\u270F\uFE0F'}</span>
-          <span>학생부에 기록하기</span>
-          <span className="ctr-badge-soon">준비 중</span>
-        </div>
+        {recommendedJobName ? (
+          <Link
+            href={`/explore/jobs?jobName=${encodeURIComponent(recommendedJobName)}`}
+            className="ctr-action-card"
+          >
+            <span className="ctr-action-icon">{'\uD83D\uDD0D'}</span>
+            <span>{recommendedJobName} 탐색하기</span>
+            <span className="ct-test-arrow">&rsaquo;</span>
+          </Link>
+        ) : (
+          <Link href="/explore/jobs" className="ctr-action-card">
+            <span className="ctr-action-icon">{'\uD83D\uDD0D'}</span>
+            <span>직업 탐색으로 이어가기</span>
+            <span className="ct-test-arrow">&rsaquo;</span>
+          </Link>
+        )}
+        {recommendedMajorName ? (
+          <Link
+            href={`/explore/majors?q=${encodeURIComponent(recommendedMajorName)}`}
+            className="ctr-action-card"
+          >
+            <span className="ctr-action-icon">{'\uD83C\uDF93'}</span>
+            <span>{recommendedMajorName} 탐색하기</span>
+            <span className="ct-test-arrow">&rsaquo;</span>
+          </Link>
+        ) : (
+          <Link href="/records/new" className="ctr-action-card">
+            <span className="ctr-action-icon">{'\u270F\uFE0F'}</span>
+            <span>학생부에 기록하기</span>
+            <span className="ct-test-arrow">&rsaquo;</span>
+          </Link>
+        )}
       </section>
     </div>
   );

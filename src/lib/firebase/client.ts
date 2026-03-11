@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { browserLocalPersistence, initializeAuth, type Auth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -31,8 +31,16 @@ function getFirebaseApp() {
   return initializeApp(firebaseConfig);
 }
 
-export function getClientAuth() {
-  return getAuth(getFirebaseApp());
+let _auth: Auth | null = null;
+
+export function getClientAuth(): Auth {
+  if (_auth) return _auth;
+
+  _auth = initializeAuth(getFirebaseApp(), {
+    persistence: browserLocalPersistence,
+  });
+
+  return _auth;
 }
 
 export function getClientDb() {
