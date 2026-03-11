@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
@@ -25,10 +25,6 @@ export default function SignInPage() {
     }
   }, []);
 
-  useEffect(() => {
-    router.prefetch('/dashboard');
-  }, [router]);
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!auth) {
@@ -40,9 +36,10 @@ export default function SignInPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace('/dashboard');
+      router.push('/dashboard');
     } catch (err) {
       setError(toAuthErrorMessage(err, '로그인에 실패했습니다. 입력 정보를 확인해 주세요.'));
+    } finally {
       setPending(false);
     }
   }

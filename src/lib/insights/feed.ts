@@ -4,7 +4,6 @@ import { createHash } from 'node:crypto';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { normalizeInsightSourceUrl } from '@/lib/insights/source-url';
 import { expandInsightKeywords, findInsightMatches } from '@/lib/insights/topic-map';
-import { searchNanetLibrary, nanetRecordToFeedItem } from '@/lib/insights/nanet';
 import type { InsightFeedItem, InsightFeedTab } from '@/types/insight';
 
 type UserSignals = {
@@ -342,11 +341,7 @@ function buildMajorKeywordGroup(majorName: string) {
   return keywords.length > 0 ? keywords : [majorName];
 }
 
-type UserSignalsBase = Omit<UserSignals, 'favoriteJobKeywords' | 'favoriteJobKeywordGroups'> & {
-  jobDocs: FirebaseFirestore.QueryDocumentSnapshot[];
-};
-
-async function getUserSignalsBase(uid: string): Promise<UserSignalsBase> {
+async function getUserSignals(uid: string): Promise<UserSignals> {
   const [jobsSnapshot, majorsSnapshot, recordsSnapshot, userSnapshot] = await Promise.all([
     getAdminDb().collection('users').doc(uid).collection('favoriteJobs').orderBy('createdAt', 'desc').limit(5).get(),
     getAdminDb().collection('users').doc(uid).collection('favoriteMajors').orderBy('createdAt', 'desc').limit(5).get(),
@@ -356,6 +351,12 @@ async function getUserSignalsBase(uid: string): Promise<UserSignalsBase> {
 
   const favoriteJobs = jobsSnapshot.docs.map((doc) => String(doc.data().jobName ?? '')).filter(Boolean);
   const favoriteMajors = majorsSnapshot.docs.map((doc) => String(doc.data().majorName ?? '')).filter(Boolean);
+  const favoriteJobKeywordGroups = await Promise.all(
+    jobsSnapshot.docs
+      .slice(0, CAREERNET_JOB_ENRICH_LIMIT)
+      .map((doc) => fetchCareerNetJobKeywords(doc.id, String(doc.data().jobName ?? '')))
+  );
+  const favoriteJobKeywords = interleaveKeywordGroups(favoriteJobKeywordGroups, 12);
   const favoriteMajorKeywordGroups = favoriteMajors.map((majorName) => buildMajorKeywordGroup(majorName));
 
   const recordTopics = recordsSnapshot.docs
@@ -376,20 +377,7 @@ async function getUserSignalsBase(uid: string): Promise<UserSignalsBase> {
     ? userSnapshot.data()?.interests.filter((value: unknown): value is string => typeof value === 'string')
     : [];
 
-  return { favoriteJobs, favoriteMajors, favoriteMajorKeywordGroups, recordTopics, interests, jobDocs: jobsSnapshot.docs };
-}
-
-async function enrichJobKeywords(jobDocs: FirebaseFirestore.QueryDocumentSnapshot[]): Promise<{
-  favoriteJobKeywords: string[];
-  favoriteJobKeywordGroups: string[][];
-}> {
-  const favoriteJobKeywordGroups = await Promise.all(
-    jobDocs
-      .slice(0, CAREERNET_JOB_ENRICH_LIMIT)
-      .map((doc) => fetchCareerNetJobKeywords(doc.id, String(doc.data().jobName ?? '')))
-  );
-  const favoriteJobKeywords = interleaveKeywordGroups(favoriteJobKeywordGroups, 12);
-  return { favoriteJobKeywords, favoriteJobKeywordGroups };
+  return { favoriteJobs, favoriteJobKeywords, favoriteJobKeywordGroups, favoriteMajors, favoriteMajorKeywordGroups, recordTopics, interests };
 }
 
 function buildSignalGroups(signals: UserSignals, tab: InsightFeedTab, selectedKeyword?: string): SignalGroup[] {
@@ -428,13 +416,6 @@ function buildSignalGroups(signals: UserSignals, tab: InsightFeedTab, selectedKe
     keywords: uniqueKeywords([topic, ...expandInsightKeywords([topic])], 4),
   }));
 
-  const interestGroups = signals.interests.slice(0, 4).map((interest) => ({
-    id: `interest:${interest}`,
-    label: interest,
-    type: 'record' as const,
-    keywords: uniqueKeywords([interest, ...expandInsightKeywords([interest])], 4),
-  }));
-
   const groups =
     tab === 'jobs'
       ? jobGroups
@@ -442,7 +423,7 @@ function buildSignalGroups(signals: UserSignals, tab: InsightFeedTab, selectedKe
         ? majorGroups
         : tab === 'record-linked'
           ? recordGroups
-          : [...jobGroups, ...majorGroups, ...interestGroups, ...recordGroups];
+          : [...jobGroups, ...majorGroups, ...recordGroups];
 
   return groups.filter((group) => group.keywords.length > 0);
 }
@@ -538,15 +519,8 @@ function inferRelations(keyword: string, title: string, description: string) {
 }
 
 export async function getInsightFeed(uid: string, tab: InsightFeedTab = 'all', limit = 12, selectedKeyword?: string) {
-  const base = await getUserSignalsBase(uid);
-
-  // CareerNet job enrichment 없이 기본 signals로 groups/keywords를 먼저 계산
-  const baseSignals: UserSignals = {
-    ...base,
-    favoriteJobKeywords: base.favoriteJobs,
-    favoriteJobKeywordGroups: base.favoriteJobs.map((name) => [name]),
-  };
-  const groups = buildSignalGroups(baseSignals, tab, selectedKeyword);
+  const signals = await getUserSignals(uid);
+  const groups = buildSignalGroups(signals, tab, selectedKeyword);
   const keywords = buildKeywords(groups);
 
   try {
@@ -559,34 +533,7 @@ export async function getInsightFeed(uid: string, tab: InsightFeedTab = 'all', l
       return feedCache.get(keyword)!;
     };
 
-    // 국회도서관 키워드를 미리 계산
-    const nanetCandidates = [
-      ...base.interests,
-      ...base.favoriteMajors,
-      ...base.favoriteJobs,
-      ...base.recordTopics,
-    ]
-      .map((value) => value.replace(/\([^)]*\)/g, '').replace(/·/g, ' ').trim())
-      .filter((value) => value.length >= 2 && value.length <= 10);
-
-    const nanetSeen = new Set<string>();
-    const nanetKeywords = nanetCandidates.filter((kw) => {
-      if (nanetSeen.has(kw)) return false;
-      nanetSeen.add(kw);
-      return true;
-    }).slice(0, 4);
-
-    // CareerNet job enrichment, Google News, nanet을 모두 병렬 시작
-    const enrichPromise = enrichJobKeywords(base.jobDocs);
-
-    const nanetPromise = Promise.all(
-      nanetKeywords.map(async (keyword) => {
-        const records = await searchNanetLibrary(keyword);
-        return records.map((record) => nanetRecordToFeedItem(record, keyword));
-      })
-    );
-
-    const groupedItemsPromise = Promise.all(
+    const groupedItems = await Promise.all(
       groups.map(async (group) => {
         const entriesByKeyword = await Promise.all(group.keywords.map(async (keyword) => ({
           keyword,
@@ -629,53 +576,20 @@ export async function getInsightFeed(uid: string, tab: InsightFeedTab = 'all', l
             });
         });
 
-        return { group, groupItems };
+        const items = [...groupItems.values()]
+          .map((item) => scoreItem(item, signals, keywords))
+          .sort((a, b) => {
+            const timeDiff = getPublishedTime(b.publishedAt) - getPublishedTime(a.publishedAt);
+            if (timeDiff !== 0) return timeDiff;
+            return b.score - a.score;
+          });
+
+        return {
+          group,
+          items,
+        };
       })
     );
-
-    // 모든 외부 호출을 병렬 대기
-    const [enriched, groupedRaw, nanetResults] = await Promise.all([
-      enrichPromise,
-      groupedItemsPromise,
-      nanetPromise,
-    ]);
-
-    // enriched job keywords로 최종 signals 완성 후 스코어링
-    const signals: UserSignals = {
-      ...base,
-      favoriteJobKeywords: enriched.favoriteJobKeywords,
-      favoriteJobKeywordGroups: enriched.favoriteJobKeywordGroups,
-    };
-
-    const groupedItems = groupedRaw.map(({ group, groupItems }) => {
-      const items = [...groupItems.values()]
-        .map((item) => scoreItem(item, signals, keywords))
-        .sort((a, b) => {
-          const timeDiff = getPublishedTime(b.publishedAt) - getPublishedTime(a.publishedAt);
-          if (timeDiff !== 0) return timeDiff;
-          return b.score - a.score;
-        });
-
-      return { group, items };
-    });
-
-    const nanetScoredItems = nanetResults
-      .flat()
-      .map((item) => scoreItem(item, signals, keywords));
-
-    // 국회도서관 자료는 ID 기준으로 중복 제거
-    const nanetDeduped = new Map<string, ReturnType<typeof scoreItem>>();
-    nanetScoredItems.forEach((item) => {
-      const existing = nanetDeduped.get(item.id);
-      if (!existing || item.score > existing.score) {
-        nanetDeduped.set(item.id, item);
-      }
-    });
-
-    const nanetPool = [...nanetDeduped.values()]
-      .sort((a, b) => b.score - a.score);
-
-    console.log(`[insights][feed] nanet keywords=${JSON.stringify(nanetKeywords)} pool=${nanetPool.length}`);
 
     const dedupedByHeadline = new Map<
       string,
@@ -723,47 +637,24 @@ export async function getInsightFeed(uid: string, tab: InsightFeedTab = 'all', l
         return true;
       });
 
-    const newsItems = allItems.map((entry) => entry.item);
+    const items = allItems.map((entry) => entry.item).slice(0, limit);
 
-    // 뉴스와 국회도서관 자료를 섞기: 뉴스 3~4개당 국회도서관 1개 비율
-    const merged: ReturnType<typeof scoreItem>[] = [];
-    let newsIdx = 0;
-    let nanetIdx = 0;
-    const NANET_INTERVAL = 4; // 뉴스 4개마다 국회도서관 1개 삽입
-
-    while (merged.length < limit && (newsIdx < newsItems.length || nanetIdx < nanetPool.length)) {
-      // 뉴스 먼저 채우기
-      const newsSliceEnd = Math.min(newsIdx + NANET_INTERVAL, newsItems.length);
-      while (newsIdx < newsSliceEnd && merged.length < limit) {
-        merged.push(newsItems[newsIdx]);
-        newsIdx += 1;
-      }
-
-      // 국회도서관 1개 삽입
-      if (nanetIdx < nanetPool.length && merged.length < limit) {
-        merged.push(nanetPool[nanetIdx]);
-        nanetIdx += 1;
-      }
-    }
-
-    if (merged.length === 0) {
+    if (items.length === 0) {
       throw new Error('EMPTY_FEED');
     }
 
-    const totalAvailable = newsItems.length + nanetPool.length;
-
     return {
-      items: merged,
+      items,
       keywords,
       fallback: false,
-      hasMore: totalAvailable > limit,
-      totalCount: totalAvailable,
+      hasMore: allItems.length > limit,
+      totalCount: allItems.length,
     };
   } catch (error) {
     console.error('[insights][feed] fallback', error);
 
     const fallbackItems = FALLBACK_ITEMS
-      .map((item) => scoreItem(item, baseSignals, keywords))
+      .map((item) => scoreItem(item, signals, keywords))
       .sort((a, b) => b.score - a.score);
 
     return {
