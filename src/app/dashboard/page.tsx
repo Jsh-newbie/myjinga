@@ -23,6 +23,7 @@ import {
   type RoadmapStep,
 } from '@/lib/dashboard/ux';
 import { normalizeInsightSourceUrl } from '@/lib/insights/source-url';
+import { resolveProtectedPageRedirectPath } from '@/lib/navigation/entry-policy';
 import type { InsightFeedItem } from '@/types/insight';
 import type { UserProfile } from '@/types/user';
 
@@ -128,7 +129,7 @@ export default function DashboardPage() {
       if (!active) return;
 
       if (!nextUser) {
-        router.replace('/auth/signin');
+        router.replace(resolveProtectedPageRedirectPath(false) ?? '/auth/signin');
         return;
       }
 
