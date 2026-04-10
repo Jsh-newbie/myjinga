@@ -1,14 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useEffect, useMemo, useState } from 'react';
+import { createUserWithEmailAndPassword, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 import { AuthShell } from '@/components/auth/auth-shell';
 import { toAuthErrorMessage } from '@/lib/auth/error-message';
 import { getClientAuth } from '@/lib/firebase/client';
 import { api } from '@/lib/api/client';
+import {
+  AUTH_SIGNIN_PATH,
+  DASHBOARD_HOME_PATH,
+  resolveAuthPageRedirectPath,
+} from '@/lib/navigation/entry-policy';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -30,6 +35,27 @@ export default function SignUpPage() {
       return null;
     }
   }, []);
+
+  useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
+    const initialPath = resolveAuthPageRedirectPath(Boolean(auth.currentUser));
+    if (initialPath) {
+      router.replace(initialPath);
+      return;
+    }
+
+    const unsub = onAuthStateChanged(auth, (nextUser) => {
+      const nextPath = resolveAuthPageRedirectPath(Boolean(nextUser));
+      if (nextPath) {
+        router.replace(nextPath);
+      }
+    });
+
+    return unsub;
+  }, [auth, router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,7 +88,7 @@ export default function SignUpPage() {
         throw new Error(result.error.message || '회원정보 초기화에 실패했습니다.');
       }
 
-      router.push('/dashboard');
+      router.push(DASHBOARD_HOME_PATH);
     } catch (err) {
       setError(toAuthErrorMessage(err, err instanceof Error ? err.message : '회원가입에 실패했습니다.'));
     } finally {
@@ -157,7 +183,7 @@ export default function SignUpPage() {
 
       <p style={{ marginTop: 16, color: '#52525b' }}>
         이미 계정이 있나요?{' '}
-        <Link href="/auth/signin" style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
+        <Link href={AUTH_SIGNIN_PATH} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
           로그인 하기
         </Link>
       </p>
