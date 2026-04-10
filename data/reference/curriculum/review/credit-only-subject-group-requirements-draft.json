@@ -1,0 +1,70 @@
+[
+  {
+    "id": "credit-only-athletics",
+    "subjectGroup": "체육",
+    "requiredCredits": 10,
+    "validationMode": "credits-only",
+    "subjectMetadataStatus": "not-started",
+    "knownStructure": {
+      "commonSubjects": [
+        "체육1",
+        "체육2"
+      ],
+      "selectionTypes": [
+        "career",
+        "convergence"
+      ]
+    },
+    "sourceText": "2025학년도 입학생을 위한 2022 개정 교육과정 선택 과목 안내서 - 고등학교 보통 교과 교과목 구성 / 총 이수 학점 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "사용자 제공 표 기반 초안",
+      "현재 단계에서는 필수 학점 10 충족 여부만 검증한다."
+    ]
+  },
+  {
+    "id": "credit-only-arts",
+    "subjectGroup": "예술",
+    "requiredCredits": 10,
+    "validationMode": "credits-only",
+    "subjectMetadataStatus": "not-started",
+    "knownStructure": {
+      "commonSubjects": [
+        "음악",
+        "미술",
+        "연극"
+      ],
+      "selectionTypes": [
+        "career",
+        "convergence"
+      ]
+    },
+    "sourceText": "2025학년도 입학생을 위한 2022 개정 교육과정 선택 과목 안내서 - 고등학교 보통 교과 교과목 구성 / 총 이수 학점 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "사용자 제공 표 기반 초안",
+      "현재 단계에서는 필수 학점 10 충족 여부만 검증한다."
+    ]
+  },
+  {
+    "id": "credit-only-integrated-language-general",
+    "subjectGroup": "기술·가정/정보/제2외국어/한문/교양",
+    "requiredCredits": 16,
+    "validationMode": "credits-only",
+    "subjectMetadataStatus": "not-started",
+    "childSubjectGroups": [
+      "기술·가정",
+      "정보",
+      "제2외국어",
+      "한문",
+      "교양"
+    ],
+    "sourceText": "2025학년도 입학생을 위한 2022 개정 교육과정 선택 과목 안내서 - 고등학교 보통 교과 교과목 구성 / 총 이수 학점 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "사용자 제공 표 기반 초안",
+      "현재 단계에서는 통합 버킷 필수 학점 16 충족 여부만 검증한다.",
+      "세부 과목 메타데이터는 추후 교과군별로 분리 입력한다."
+    ]
+  }
+]

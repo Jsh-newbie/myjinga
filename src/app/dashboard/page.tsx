@@ -15,15 +15,13 @@ import {
 } from '@/lib/api/client';
 import {
   deriveBanner,
-  deriveGreeting,
   deriveHero,
-  deriveRoadmapSteps,
   type BannerType,
   type HeroType,
-  type RoadmapStep,
 } from '@/lib/dashboard/ux';
 import { normalizeInsightSourceUrl } from '@/lib/insights/source-url';
 import type { InsightFeedItem } from '@/types/insight';
+import type { OnboardingState, OnboardingStep } from '@/types/onboarding';
 import type { UserProfile } from '@/types/user';
 
 type LoadingState = 'loading' | 'ready' | 'error';
@@ -51,6 +49,7 @@ export default function DashboardPage() {
   const [favoriteMajorNames, setFavoriteMajorNames] = useState<string[]>([]);
   const [recentRecord, setRecentRecord] = useState<RecordListItem | null>(null);
   const [savedInsightCount, setSavedInsightCount] = useState(0);
+  const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const lastLoadedUidRef = useRef<string | null>(null);
   const lastInsightUidRef = useRef<string | null>(null);
 
@@ -74,6 +73,7 @@ export default function DashboardPage() {
     setFavoriteMajorNames(data.favoriteMajorNames);
     setRecentRecord(data.recentRecord);
     setSavedInsightCount(data.savedInsightCount);
+    setOnboarding(data.onboarding);
     setState('ready');
     lastLoadedUidRef.current = data.uid;
   }
@@ -207,20 +207,11 @@ export default function DashboardPage() {
     favoriteJobNames,
     favoriteMajorNames,
   });
-  const greeting = deriveGreeting({
-    results: completedResults,
-    favoriteJobNames,
-    favoriteMajorNames,
-    recentRecord,
-  });
-  const roadmapSteps = deriveRoadmapSteps({
-    sessions: inProgressSessions,
-    results: completedResults,
-    favoriteJobNames,
-    favoriteMajorNames,
-    recentRecord,
-    savedInsightCount,
-  });
+  const greeting = onboarding?.nextAction ?? {
+    message: '진로 검사부터 시작해 볼까요?',
+    ctaLabel: '검사 시작',
+    ctaHref: '/career-test',
+  };
 
   if (state === 'loading') {
     return <MainSkeleton />;
@@ -267,7 +258,7 @@ export default function DashboardPage() {
 
       <ContextBanner banner={banner} />
       <HeroCard hero={hero} />
-      <OnboardingRoadmap steps={roadmapSteps} />
+      {onboarding && <OnboardingRoadmap onboarding={onboarding} />}
 
       <h2 className="main-section-title">바로가기</h2>
       <div className="main-quick-grid">
@@ -513,10 +504,8 @@ function HeroStat({ label, value, href }: { label: string; value: string; href: 
   );
 }
 
-function OnboardingRoadmap({ steps }: { steps: RoadmapStep[] }) {
-  const completedCount = steps.filter((step) => step.done).length;
-  const allDone = completedCount === steps.length;
-  const progressPercent = Math.round((completedCount / steps.length) * 100);
+function OnboardingRoadmap({ onboarding }: { onboarding: OnboardingState }) {
+  const { steps, completedCount, totalCount, allDone, progressPercent } = onboarding;
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('roadmap-collapsed') === '1';
@@ -543,11 +532,11 @@ function OnboardingRoadmap({ steps }: { steps: RoadmapStep[] }) {
           <p className="main-roadmap-subtitle">
             {allDone
               ? '기본 탐색을 모두 완료했어요.'
-              : '다음 단계까지 한 번에 이어가 보세요.'}
+              : '지금 해야 할 다음 행동부터 이어가 보세요.'}
           </p>
         </div>
         <span className="main-roadmap-badge">
-          {completedCount}/{steps.length} 완료
+          {completedCount}/{totalCount} 완료
           {allDone && (
             <svg
               width="14"
@@ -581,7 +570,13 @@ function OnboardingRoadmap({ steps }: { steps: RoadmapStep[] }) {
                   {step.done ? '✓' : index + 1}
                 </span>
                 <span className="main-roadmap-label">{step.label}</span>
-                <span className="main-roadmap-state">{step.done ? '완료' : '이동'}</span>
+                <span
+                  className={`main-roadmap-state${
+                    step.state === 'current' ? ' main-roadmap-state--current' : ''
+                  }`}
+                >
+                  {step.done ? '완료' : step.state === 'current' ? '추천' : '이동'}
+                </span>
               </Link>
             ))}
           </div>

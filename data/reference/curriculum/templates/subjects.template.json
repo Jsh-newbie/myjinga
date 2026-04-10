@@ -1,0 +1,44 @@
+[
+  {
+    "id": "subject-template-id",
+    "nameKo": "과목명",
+    "aliasesKo": [],
+    "schoolLevel": "high",
+    "curriculumRevision": "2022",
+    "subjectGroup": "수학",
+    "selectionType": "general",
+    "creditPolicy": {
+      "default": 4,
+      "min": 3,
+      "max": 5
+    },
+    "evaluation": {
+      "mode": "relative",
+      "gradeLabel": "A~E"
+    },
+    "summary": "과목 요약",
+    "keyTopics": [
+      "핵심 주제"
+    ],
+    "relatedJobs": [
+      "관련 직업"
+    ],
+    "relatedMajorNames": [
+      "관련 학과명"
+    ],
+    "tags": [
+      "태그"
+    ],
+    "sourceRefs": [
+      {
+        "sourceId": "source-template-id",
+        "pages": [
+          1
+        ],
+        "sectionLabel": "교과 > 과목명",
+        "extractionMethod": "manual",
+        "confidence": "medium"
+      }
+    ]
+  }
+]

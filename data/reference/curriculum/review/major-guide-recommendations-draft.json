@@ -1,0 +1,75 @@
+[
+  {
+    "id": "major-guide-recommendation-business-administration",
+    "majorId": "major-business-administration",
+    "majorNameKo": "경영학과",
+    "sourceProvider": "seoul-hsc",
+    "sourceUrl": "https://seoulhsc.sen.go.kr/fus/MI000000000000000066/subjectGuide/2022/seriesInfoContent.do?series_seq=247",
+    "requiredSubjectIds": [
+      "subject-math-economic-math",
+      "subject-social-economics",
+      "subject-social-finance-and-economic-life"
+    ],
+    "recommendedSubjectIds": [
+      "subject-english-for-occupation",
+      "subject-english-presentation-and-debate",
+      "subject-social-understanding-international-relations",
+      "subject-social-global-citizenship-and-geography"
+    ],
+    "targetUse": "prototype-testing",
+    "reviewStatus": "draft",
+    "notes": [
+      "서울고교학점제지원센터 학과 안내 기반 테스트용 수동 초안",
+      "필수 고정 과목 생성용 데이터로 사용",
+      "정확한 subject_seq 매핑과 학교별 개설 여부 검증은 후속 작업"
+    ]
+  },
+  {
+    "id": "major-guide-recommendation-economics",
+    "majorId": "major-economics",
+    "majorNameKo": "경제학과",
+    "sourceProvider": "seoul-hsc",
+    "sourceUrl": "https://seoulhsc.sen.go.kr/fus/MI000000000000000066/subjectGuide/2022/seriesInfoContent.do?series_seq=247",
+    "requiredSubjectIds": [
+      "subject-math-economic-math",
+      "subject-social-economics",
+      "subject-math-probability-and-statistics"
+    ],
+    "recommendedSubjectIds": [
+      "subject-math-practical-statistics",
+      "subject-social-finance-and-economic-life",
+      "subject-social-understanding-international-relations",
+      "subject-english-reading-and-writing"
+    ],
+    "targetUse": "prototype-testing",
+    "reviewStatus": "draft",
+    "notes": [
+      "서울고교학점제지원센터 학과 안내 기반 테스트용 수동 초안",
+      "경제학과는 수학/통계 축을 강하게 반영한 프로토타입 규칙"
+    ]
+  },
+  {
+    "id": "major-guide-recommendation-political-science-and-diplomacy",
+    "majorId": "major-political-science-and-diplomacy",
+    "majorNameKo": "정치외교학과",
+    "sourceProvider": "seoul-hsc",
+    "sourceUrl": "https://seoulhsc.sen.go.kr/fus/MI000000000000000066/subjectGuide/2022/seriesInfoContent.do?series_seq=247",
+    "requiredSubjectIds": [
+      "subject-social-politics",
+      "subject-social-law-and-society",
+      "subject-social-understanding-international-relations"
+    ],
+    "recommendedSubjectIds": [
+      "subject-english-presentation-and-debate",
+      "subject-social-global-citizenship-and-geography",
+      "subject-social-east-asian-history-journey",
+      "subject-social-modern-world-through-history"
+    ],
+    "targetUse": "prototype-testing",
+    "reviewStatus": "draft",
+    "notes": [
+      "서울고교학점제지원센터 학과 안내 기반 테스트용 수동 초안",
+      "정치외교학과는 정치/법/국제 관계 과목을 필수 고정 과목으로 우선 배정"
+    ]
+  }
+]

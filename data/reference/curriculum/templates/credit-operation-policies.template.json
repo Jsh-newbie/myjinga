@@ -1,0 +1,40 @@
+[
+  {
+    "id": "credit-operation-policy-common-core-subjects",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "policyCategory": "common",
+    "appliesTo": {
+      "subjectNames": [
+        "공통국어1",
+        "공통국어2",
+        "공통수학1",
+        "공통수학2",
+        "공통영어1",
+        "공통영어2",
+        "통합사회1",
+        "통합사회2",
+        "통합과학1",
+        "통합과학2"
+      ]
+    },
+    "defaultCredits": 4,
+    "creditRange": {
+      "min": 3,
+      "max": 4
+    },
+    "adjustmentPolicy": {
+      "maxAbsoluteAdjustment": 1,
+      "canDecrease": true,
+      "canIncrease": false
+    },
+    "exceptionRules": [],
+    "sourceText": "사용자 제공 이미지 - 과목 기본 학점 및 편성·운영 범위 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "공통과목 기본 편성 기준 템플릿",
+      "1학점 내 감(-) 가능, 증(+) 불가"
+    ]
+  }
+]

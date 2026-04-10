@@ -1,0 +1,41 @@
+[
+  {
+    "id": "major-template-id",
+    "nameKo": "학과명",
+    "aliasesKo": [],
+    "field": "사회",
+    "subfield": "상경",
+    "summary": "학과 요약",
+    "recommendedStudentTraits": [
+      "추천 학생 특성"
+    ],
+    "foundationCourses": [
+      "전공 기초 과목"
+    ],
+    "advancedCourses": [
+      "전공 심화 과목"
+    ],
+    "similarMajorNames": [
+      "유사 학과명"
+    ],
+    "careerPaths": [
+      "졸업 후 진로"
+    ],
+    "universityExamples": {
+      "seoul": [],
+      "metro": [],
+      "nonMetro": []
+    },
+    "sourceRefs": [
+      {
+        "sourceId": "source-template-id",
+        "pages": [
+          1
+        ],
+        "sectionLabel": "계열별 학과 안내 > 학과명",
+        "extractionMethod": "manual",
+        "confidence": "medium"
+      }
+    ]
+  }
+]

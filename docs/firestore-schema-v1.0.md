@@ -1,6 +1,7 @@
 # Firestore 데이터베이스 스키마 문서 v1.0
 
 > 작성일: 2026-03-06
+> 최근 수정일: 2026-04-10
 > 프로젝트: 마진가(Myjinga)
 > 데이터베이스: Firebase Firestore
 
@@ -30,7 +31,7 @@
 | 상태 | 컬렉션 | 비고 |
 |------|--------|------|
 | 구현 완료 | `users`, `testSessions`, `testResults` | Phase 1~2 |
-| 미구현 | `records`, `majors`, `subjects` | Phase 3 |
+| 미구현 | `records`, `curriculumSources`, `fieldSubjectGuides`, `majors`, `subjects`, `majorSubjectLinks` | Phase 3 |
 | 미구현 | `subscriptions`, `payments`, `aiUsageLogs` | Phase 4 |
 | 미구현 | `insightContents`, `users/{uid}/insightSaves`, `users/{uid}/insightDrafts` | 학생부 Insight 초안 |
 
@@ -60,11 +61,16 @@ firestore/
 │   └── insightDrafts/{draftId}              # 학생부 Insight 초안 (미구현)
 ├── majors/{majorId}                         # 추천 학과 (미구현, 읽기전용)
 ├── subjects/{subjectId}                     # 고교학점제 과목 (미구현, 읽기전용)
+├── curriculumSources/{sourceId}             # 교육과정 출처 문서 (미구현, 읽기전용)
+├── fieldSubjectGuides/{guideId}             # 계열별 핵심/권장 과목 가이드 (미구현, 읽기전용)
+├── majorSubjectLinks/{linkId}               # 학과-과목 추천 연결 (미구현, 읽기전용)
 ├── insightContents/{contentId}              # 학생부 Insight 콘텐츠 (미구현)
 ├── subscriptions/{subscriptionId}           # 구독 (미구현)
 ├── payments/{paymentId}                     # 결제 (미구현)
 └── aiUsageLogs/{logId}                      # AI 사용 로그 (미구현)
 ```
+
+참고: `curriculumSources`, `fieldSubjectGuides`, `majors`, `subjects`, `majorSubjectLinks`의 상세 설계는 [myjinga-curriculum-reference-data-spec-v1.0.md](/Users/sunghyunji/개발/myjinga/docs/myjinga-curriculum-reference-data-spec-v1.0.md)에 따른다.
 
 ---
 
@@ -212,16 +218,19 @@ firestore/
 
 추천 학과 (읽기 전용 참조 데이터).
 
+상세 스키마는 `docs/myjinga-curriculum-reference-data-spec-v1.0.md` 기준을 따른다. 본 문서에는 현재 Firestore 관점의 핵심 필드만 요약한다.
+
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `name` | `string` | O | 학과명 |
 | `field` | `string` | O | 분야 |
-| `description` | `string` | O | 설명 |
-| `recommendedSubjects.general` | `string[]` | O | 일반선택과목 |
-| `recommendedSubjects.career` | `string[]` | O | 진로선택과목 |
-| `recommendedSubjects.convergence` | `string[]` | O | 융합선택과목 |
-| `relatedJobs` | `string[]` | O | 관련 직업 |
-| `relatedMajors` | `string[]` | - | 관련 학과 |
+| `summary` | `string` | O | 학과 요약 |
+| `recommendedStudentTraits` | `string[]` | - | 추천 학생 특성 |
+| `foundationCourses` | `string[]` | - | 전공 기초 교과목 |
+| `advancedCourses` | `string[]` | - | 전공 심화 교과목 |
+| `careerPaths` | `string[]` | - | 졸업 후 진로 |
+| `similarMajors` | `string[]` | - | 유사 학과 |
+| `sourceRefs` | `object[]` | O | 출처 참조 |
 
 ---
 
@@ -229,16 +238,20 @@ firestore/
 
 고교학점제 과목 (읽기 전용 참조 데이터).
 
+상세 스키마는 `docs/myjinga-curriculum-reference-data-spec-v1.0.md` 기준을 따른다. 본 문서에는 현재 Firestore 관점의 핵심 필드만 요약한다.
+
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `name` | `string` | O | 과목명 |
-| `category` | `string` | O | 카테고리 (일반/진로/융합) |
-| `type` | `string` | O | 과목 유형 |
-| `description` | `string` | O | 설명 |
-| `credits` | `number` | - | 학점 |
-| `evaluation` | `string` | - | 평가 방식 |
-| `suneung` | `boolean` | - | 수능 반영 여부 |
-| `prerequisites` | `string[]` | - | 선수과목 |
+| `subjectGroup` | `string` | O | 교과(군) |
+| `selectionType` | `string` | O | 선택 유형 (`common`, `general`, `career`, `convergence`, `specialized`) |
+| `summary` | `string` | O | 과목 요약 |
+| `keyTopics` | `string[]` | O | 주요 내용 |
+| `creditPolicy` | `object` | - | 학점 정책 |
+| `evaluation` | `object` | - | 평가 방식 |
+| `relatedJobs` | `string[]` | - | 관련 직업 |
+| `relatedMajorNames` | `string[]` | - | 관련 학과명 |
+| `sourceRefs` | `object[]` | O | 출처 참조 |
 
 ---
 
@@ -387,12 +400,27 @@ service cloud.firestore {
     }
 
     // 참조 데이터 - 인증 사용자 읽기 전용
+    match /curriculumSources/{sourceId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /fieldSubjectGuides/{guideId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     match /majors/{majorId} {
       allow read: if isSignedIn();
       allow write: if false;
     }
 
     match /subjects/{subjectId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /majorSubjectLinks/{linkId} {
       allow read: if isSignedIn();
       allow write: if false;
     }
@@ -413,8 +441,11 @@ service cloud.firestore {
 | `users/{uid}/testSessions` | 본인만 | 본인만 | |
 | `users/{uid}/testResults` | 본인만 | 본인만 | |
 | `users/{uid}/records` | 본인만 | 본인만 | |
+| `curriculumSources` | 인증 사용자 | 불가 | 읽기 전용 |
+| `fieldSubjectGuides` | 인증 사용자 | 불가 | 읽기 전용 |
 | `majors` | 인증 사용자 | 불가 | 읽기 전용 |
 | `subjects` | 인증 사용자 | 불가 | 읽기 전용 |
+| `majorSubjectLinks` | 인증 사용자 | 불가 | 읽기 전용 |
 | 기타 | 불가 | 불가 | 기본 거부 |
 
 ---
@@ -436,7 +467,8 @@ service cloud.firestore {
 | `users/{uid}/records` | `category ASC` + `semester ASC` + `createdAt DESC` | 기록 필터링 |
 | `users/{uid}/records` | `semester ASC` + `updatedAt DESC` | 기록 최신순 |
 | `majors` | `field ASC` + `name ASC` | 학과 검색 |
-| `subjects` | `category ASC` + `type ASC` + `name ASC` | 과목 검색 |
+| `subjects` | `subjectGroup ASC` + `selectionType ASC` + `name ASC` | 과목 검색 |
+| `majorSubjectLinks` | `majorId ASC` + `selectionBucket ASC` + `recommendationStrength ASC` | 학과별 추천 과목 조회 |
 
 ---
 
@@ -556,7 +588,7 @@ docRef.update({ reportDetail, reportDetailFetching: FieldValue.delete() });
 | payments 컬렉션 | 정의됨 | 미구현 | Phase 4 |
 | aiUsageLogs 컬렉션 | 정의됨 | 미구현 | Phase 4 |
 | records 컬렉션 | 정의됨 | 미구현 | Phase 3 |
-| majors / subjects | 정의됨 | 미구현 | Phase 3 |
+| curriculumSources / fieldSubjectGuides / majors / subjects / majorSubjectLinks | 정의됨 | 미구현 | Phase 3 |
 
 ---
 

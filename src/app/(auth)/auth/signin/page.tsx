@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 import { AuthShell } from '@/components/auth/auth-shell';
 import { toAuthErrorMessage } from '@/lib/auth/error-message';
+import { buildAccountRecoveryTips, requestPasswordReset } from '@/lib/auth/recovery';
 import { getClientAuth } from '@/lib/firebase/client';
 
 export default function SignInPage() {
@@ -15,6 +16,8 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [showRecoveryHelp, setShowRecoveryHelp] = useState(false);
 
   const auth = useMemo(() => {
     try {
@@ -37,6 +40,7 @@ export default function SignInPage() {
 
     setPending(true);
     setError('');
+    setNotice('');
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -46,6 +50,29 @@ export default function SignInPage() {
       setPending(false);
     }
   }
+
+  async function handlePasswordReset() {
+    if (!auth) {
+      return;
+    }
+
+    setError('');
+    setNotice('');
+
+    try {
+      const normalizedEmail = await requestPasswordReset(auth, email, sendPasswordResetEmail);
+      setNotice(`${normalizedEmail}로 비밀번호 재설정 이메일을 보냈습니다. 메일함과 스팸함을 확인해 주세요.`);
+    } catch (err) {
+      setError(
+        toAuthErrorMessage(
+          err,
+          err instanceof Error ? err.message : '비밀번호 재설정 이메일 발송에 실패했습니다.'
+        )
+      );
+    }
+  }
+
+  const recoveryTips = buildAccountRecoveryTips(email);
 
   return (
     <AuthShell
@@ -86,9 +113,75 @@ export default function SignInPage() {
         >
           {pending ? '로그인 중...' : '로그인'}
         </button>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={handlePasswordReset}
+            style={{
+              padding: 0,
+              border: 'none',
+              background: 'none',
+              color: 'var(--brand-700)',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            비밀번호 재설정
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowRecoveryHelp((prev) => !prev)}
+            style={{
+              padding: 0,
+              border: 'none',
+              background: 'none',
+              color: 'var(--brand-700)',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            {showRecoveryHelp ? '계정 찾기 안내 닫기' : '계정 찾기 안내'}
+          </button>
+        </div>
       </form>
 
+      {notice && (
+        <p
+          style={{
+            marginTop: 12,
+            color: 'var(--brand-700)',
+            fontWeight: 600,
+            background: 'var(--brand-100)',
+            borderRadius: 12,
+            padding: '12px 14px',
+          }}
+        >
+          {notice}
+        </p>
+      )}
       {error && <p style={{ marginTop: 12, color: '#b91c1c', fontWeight: 600 }}>{error}</p>}
+
+      {showRecoveryHelp && (
+        <div
+          style={{
+            marginTop: 14,
+            padding: '14px 16px',
+            borderRadius: 14,
+            border: '1px solid #e4e4e7',
+            background: '#fafafa',
+          }}
+        >
+          <strong style={{ display: 'block', marginBottom: 8, fontSize: 14 }}>
+            계정을 찾을 때 먼저 확인해 보세요
+          </strong>
+          <ul style={{ margin: 0, paddingLeft: 18, color: '#52525b', fontSize: 13, lineHeight: 1.6 }}>
+            {recoveryTips.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <p style={{ marginTop: 16, color: '#52525b' }}>
         계정이 없나요?{' '}

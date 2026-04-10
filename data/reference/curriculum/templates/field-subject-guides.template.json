@@ -1,0 +1,27 @@
+[
+  {
+    "id": "field-guide-template-id",
+    "field": "사회",
+    "subfield": "상경",
+    "coreSubjects": [
+      "subject-template-id"
+    ],
+    "recommendedSubjects": [
+      "subject-template-id"
+    ],
+    "notes": [
+      "검수 후 입력할 가이드 메모"
+    ],
+    "sourceRefs": [
+      {
+        "sourceId": "source-template-id",
+        "pages": [
+          1
+        ],
+        "sectionLabel": "계열 과목 선택 정보",
+        "extractionMethod": "manual",
+        "confidence": "medium"
+      }
+    ]
+  }
+]

@@ -1,0 +1,110 @@
+{
+  "id": "graduation-requirements-2025-general-high-school",
+  "schoolLevel": "high",
+  "schoolType": "general-high-school",
+  "entryYear": 2025,
+  "curriculumRevision": "2022",
+  "creditSummary": {
+    "totalCredits": 192,
+    "requiredCredits": 84,
+    "electiveCredits": 90,
+    "creativeExperientialActivitiesCredits": 18,
+    "creativeExperientialActivitiesHours": 288
+  },
+  "electiveCreditPolicyText": "학생의 적성과 진로를 고려하여 편성",
+  "subjectGroupRequirements": [
+    {
+      "subjectGroup": "국어",
+      "validationMode": "full",
+      "commonSubjects": [
+        "공통국어1",
+        "공통국어2"
+      ],
+      "requiredCredits": 8
+    },
+    {
+      "subjectGroup": "수학",
+      "validationMode": "full",
+      "commonSubjects": [
+        "공통수학1",
+        "공통수학2"
+      ],
+      "requiredCredits": 8
+    },
+    {
+      "subjectGroup": "영어",
+      "validationMode": "full",
+      "commonSubjects": [
+        "공통영어1",
+        "공통영어2"
+      ],
+      "requiredCredits": 8
+    },
+    {
+      "subjectGroup": "사회(역사/도덕 포함)",
+      "validationMode": "full",
+      "requiredCredits": 14,
+      "requirementBuckets": [
+        {
+          "bucketLabel": "한국사",
+          "commonSubjects": [
+            "한국사1",
+            "한국사2"
+          ],
+          "requiredCredits": 6
+        },
+        {
+          "bucketLabel": "통합사회",
+          "commonSubjects": [
+            "통합사회1",
+            "통합사회2"
+          ],
+          "requiredCredits": 8
+        }
+      ]
+    },
+    {
+      "subjectGroup": "과학",
+      "validationMode": "full",
+      "commonSubjects": [
+        "통합과학1",
+        "통합과학2",
+        "과학탐구실험1",
+        "과학탐구실험2"
+      ],
+      "requiredCredits": 10
+    },
+    {
+      "subjectGroup": "체육",
+      "validationMode": "credits-only",
+      "commonSubjects": [],
+      "requiredCredits": 10
+    },
+    {
+      "subjectGroup": "예술",
+      "validationMode": "credits-only",
+      "commonSubjects": [],
+      "requiredCredits": 10
+    },
+    {
+      "subjectGroup": "기술·가정/정보/제2외국어/한문/교양",
+      "validationMode": "credits-only",
+      "commonSubjects": [],
+      "requiredCredits": 16
+    }
+  ],
+  "constraintNotes": [
+    "선택과목 추천은 위 필수 이수 학점 조건을 먼저 만족해야 한다.",
+    "자율 이수 학점 90은 학생의 적성과 진로를 고려하여 편성한다.",
+    "창의적 체험활동 18학점(288시간)은 교과 이수 학점과 별도로 관리한다.",
+    "validationMode가 credits-only인 교과군은 현재 단계에서 학점 총량만 검증한다."
+  ],
+  "sourceText": "2025학년도 입학생을 위한 2022 개정 교육과정 선택 과목 안내서 - 고등학교 보통 교과 교과목 구성 / 총 이수 학점 표",
+  "reviewStatus": "draft",
+  "notes": [
+    "사용자 제공 이미지 기반 초안",
+    "선택과목 메타데이터와 분리된 이수 규정 레이어",
+    "추천 로직에서 먼저 만족해야 하는 하드 제약 조건을 정리한 파일",
+    "체육, 예술, 기술·가정/정보/제2외국어/한문/교양은 표 기준 필수 학점만 우선 반영"
+  ]
+}

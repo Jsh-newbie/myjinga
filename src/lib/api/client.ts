@@ -7,6 +7,7 @@ import type {
 } from '@/lib/careernet/types';
 import type { StudentRecord } from '@/types/record';
 import type { InsightFeedResponse, InsightFeedTab, InsightSave } from '@/types/insight';
+import type { OnboardingState } from '@/types/onboarding';
 import type { MajorListItem, MajorDetail } from '@/lib/careernet/major-types';
 
 export interface SessionItem {
@@ -66,6 +67,7 @@ export interface DashboardBootstrap {
   favoriteMajorNames: string[];
   recentRecord: RecordListItem | null;
   savedInsightCount: number;
+  onboarding: OnboardingState;
 }
 
 async function request<T>(

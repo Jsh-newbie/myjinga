@@ -2,6 +2,7 @@ import { CAREER_TESTS } from '@/lib/careernet/constants';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { listInProgressSessions, listTestResults } from '@/lib/careernet/repository';
 import { listInsightSaves } from '@/lib/insights/repository';
+import { buildOnboardingState } from '@/lib/onboarding/roadmap';
 import { listRecords } from '@/lib/records/repository';
 import type { UserProfile } from '@/types/user';
 
@@ -58,5 +59,16 @@ export async function getDashboardBootstrap(uid: string) {
       .filter(Boolean),
     recentRecord: recordsResult.items[0] ?? null,
     savedInsightCount: insightSaves.length,
+    onboarding: buildOnboardingState({
+      results: results.map((result) => ({ testTypeId: result.testTypeId })),
+      favoriteJobNames: favoriteJobsSnapshot.docs
+        .map((doc) => String(doc.data().jobName ?? ''))
+        .filter(Boolean),
+      favoriteMajorNames: favoriteMajorsSnapshot.docs
+        .map((doc) => String(doc.data().majorName ?? ''))
+        .filter(Boolean),
+      recentRecord: recordsResult.items[0] ?? null,
+      savedInsightCount: insightSaves.length,
+    }),
   };
 }

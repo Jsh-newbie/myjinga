@@ -381,6 +381,10 @@ a {
   flex-shrink: 0;
 }
 
+.main-roadmap-state--current {
+  color: #b45309;
+}
+
 .main-section-title {
   font-size: 15px;
   font-weight: 700;
@@ -2725,6 +2729,18 @@ a {
   font-weight: 600;
 }
 
+.ctr-action-card--button {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.ctr-action-card--button:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
 .ctr-action-card:active {
   background: #f4f4f5;
 }
@@ -2734,7 +2750,27 @@ a {
   flex-shrink: 0;
 }
 
-.ctr-action-card span:nth-child(2) {
+.ctr-action-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ctr-action-copy strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #18181b;
+}
+
+.ctr-action-copy span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #71717a;
+}
+
+.ctr-action-card > span:nth-child(2) {
   flex: 1;
 }
 

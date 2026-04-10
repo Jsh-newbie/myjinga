@@ -1,0 +1,25 @@
+[
+  {
+    "id": "credit-only-athletics",
+    "subjectGroup": "체육",
+    "requiredCredits": 10,
+    "validationMode": "credits-only",
+    "subjectMetadataStatus": "not-started",
+    "knownStructure": {
+      "commonSubjects": [
+        "체육1",
+        "체육2"
+      ],
+      "selectionTypes": [
+        "career",
+        "convergence"
+      ]
+    },
+    "sourceText": "2025학년도 입학생을 위한 2022 개정 교육과정 선택 과목 안내서 - 고등학교 보통 교과 교과목 구성 / 총 이수 학점 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "임시 credit-only 기준 템플릿",
+      "현재 단계에서는 필수 학점 총량만 검증한다."
+    ]
+  }
+]

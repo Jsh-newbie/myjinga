@@ -1,0 +1,22 @@
+[
+  {
+    "id": "major-template-id__subject-template-id",
+    "majorId": "major-template-id",
+    "subjectId": "subject-template-id",
+    "selectionBucket": "general",
+    "recommendationStrength": "recommended",
+    "sourceType": "majorExample",
+    "reason": "학과 안내서의 관련 고등학교 선택 과목 예시에 포함된다.",
+    "sourceRefs": [
+      {
+        "sourceId": "source-template-id",
+        "pages": [
+          1
+        ],
+        "sectionLabel": "관련 고등학교 선택 과목 예시",
+        "extractionMethod": "manual",
+        "confidence": "medium"
+      }
+    ]
+  }
+]

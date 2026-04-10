@@ -1,0 +1,15 @@
+[
+  {
+    "id": "source-template-id",
+    "title": "안내서 제목",
+    "fileName": "source-file.pdf",
+    "curriculumRevision": "2022",
+    "guideYear": 2025,
+    "region": "서울",
+    "publisher": "발행기관명",
+    "publishedAt": "2025-01-01",
+    "pageCount": 0,
+    "checksum": "",
+    "status": "active"
+  }
+]

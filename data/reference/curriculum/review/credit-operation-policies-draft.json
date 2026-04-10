@@ -1,0 +1,220 @@
+[
+  {
+    "id": "credit-operation-policy-common-core-subjects",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "policyCategory": "common",
+    "appliesTo": {
+      "subjectNames": [
+        "공통국어1",
+        "공통국어2",
+        "공통수학1",
+        "공통수학2",
+        "공통영어1",
+        "공통영어2",
+        "통합사회1",
+        "통합사회2",
+        "통합과학1",
+        "통합과학2"
+      ]
+    },
+    "defaultCredits": 4,
+    "creditRange": {
+      "min": 3,
+      "max": 4
+    },
+    "adjustmentPolicy": {
+      "maxAbsoluteAdjustment": 1,
+      "canDecrease": true,
+      "canIncrease": false
+    },
+    "exceptionRules": [],
+    "sourceText": "사용자 제공 이미지 - 과목 기본 학점 및 편성·운영 범위 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "공통국어, 공통수학, 공통영어, 통합사회, 통합과학에 공통 적용",
+      "1학점 내 감(-) 가능, 증(+) 불가"
+    ]
+  },
+  {
+    "id": "credit-operation-policy-common-korean-history",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "policyCategory": "common",
+    "appliesTo": {
+      "subjectNames": [
+        "한국사1",
+        "한국사2"
+      ]
+    },
+    "defaultCredits": 3,
+    "creditRange": {
+      "min": 3,
+      "max": 3
+    },
+    "adjustmentPolicy": {
+      "maxAbsoluteAdjustment": 0,
+      "canDecrease": false,
+      "canIncrease": false
+    },
+    "exceptionRules": [],
+    "sourceText": "사용자 제공 이미지 - 과목 기본 학점 및 편성·운영 범위 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "감(-) 불가, 증(+) 불가"
+    ]
+  },
+  {
+    "id": "credit-operation-policy-common-science-inquiry-lab",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "policyCategory": "common",
+    "appliesTo": {
+      "subjectNames": [
+        "과학탐구실험1",
+        "과학탐구실험2"
+      ]
+    },
+    "defaultCredits": 1,
+    "creditRange": {
+      "min": 1,
+      "max": 1
+    },
+    "adjustmentPolicy": {
+      "maxAbsoluteAdjustment": 0,
+      "canDecrease": false,
+      "canIncrease": false
+    },
+    "exceptionRules": [
+      {
+        "ruleType": "allow-omission",
+        "schoolTypes": [
+          "과학고",
+          "체육고",
+          "예술고",
+          "특성화고",
+          "산업수요 맞춤형고"
+        ],
+        "description": "과학탐구실험 편성 제외 가능"
+      }
+    ],
+    "sourceText": "사용자 제공 이미지 - 과목 기본 학점 및 편성·운영 범위 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "기본 편성은 1학점 고정",
+      "특정 학교 유형은 편성 제외 가능"
+    ]
+  },
+  {
+    "id": "credit-operation-policy-selection-core-groups",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "policyCategory": "selection",
+    "appliesTo": {
+      "subjectGroups": [
+        "국어",
+        "수학",
+        "영어",
+        "사회(역사/도덕 포함)",
+        "과학",
+        "기술·가정",
+        "정보",
+        "제2외국어",
+        "한문"
+      ],
+      "selectionTypes": [
+        "general",
+        "career",
+        "convergence"
+      ]
+    },
+    "defaultCredits": 4,
+    "creditRange": {
+      "min": 3,
+      "max": 5
+    },
+    "adjustmentPolicy": {
+      "maxAbsoluteAdjustment": 1,
+      "canDecrease": true,
+      "canIncrease": true
+    },
+    "exceptionRules": [],
+    "sourceText": "사용자 제공 이미지 - 과목 기본 학점 및 편성·운영 범위 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "국어·수학·영어·사회·과학·기술·가정·정보·제2외국어·한문 교과군 선택과목 공통 기준",
+      "1학점 내 증감(±) 가능"
+    ]
+  },
+  {
+    "id": "credit-operation-policy-selection-athletics-arts-liberal",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "policyCategory": "selection",
+    "appliesTo": {
+      "subjectGroups": [
+        "체육",
+        "예술",
+        "교양"
+      ],
+      "selectionTypes": [
+        "general",
+        "career",
+        "convergence"
+      ]
+    },
+    "defaultCredits": 3,
+    "creditRange": {
+      "min": 2,
+      "max": 4
+    },
+    "adjustmentPolicy": {
+      "maxAbsoluteAdjustment": 1,
+      "canDecrease": true,
+      "canIncrease": true
+    },
+    "exceptionRules": [],
+    "sourceText": "사용자 제공 이미지 - 과목 기본 학점 및 편성·운영 범위 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "체육·예술·교양 교과군 선택과목 공통 기준",
+      "1학점 내 증감(±) 가능"
+    ]
+  },
+  {
+    "id": "credit-operation-policy-selection-two-credit-subjects",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "policyCategory": "selection",
+    "appliesTo": {
+      "subjectNames": [
+        "스포츠 문화",
+        "스포츠 과학",
+        "생애 설계와 자립"
+      ]
+    },
+    "defaultCredits": 2,
+    "creditRange": {
+      "min": 1,
+      "max": 2
+    },
+    "adjustmentPolicy": {
+      "maxAbsoluteAdjustment": 1,
+      "canDecrease": true,
+      "canIncrease": false
+    },
+    "exceptionRules": [],
+    "sourceText": "사용자 제공 이미지 - 과목 기본 학점 및 편성·운영 범위 표",
+    "reviewStatus": "draft",
+    "notes": [
+      "특정 선택과목 예외 기준",
+      "1학점 내 감(-) 가능, 증(+) 불가"
+    ]
+  }
+]

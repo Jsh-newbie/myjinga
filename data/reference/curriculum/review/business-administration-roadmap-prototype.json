@@ -1,0 +1,171 @@
+{
+  "id": "prototype-roadmap-business-administration-2025",
+  "targetMajor": "경영학과",
+  "schoolType": "general-high-school",
+  "entryYear": 2025,
+  "status": "needsReview",
+  "sourceMajorGuideId": "major-guide-recommendation-business-administration",
+  "assumptions": [
+    "학교별 실제 개설 여부와 개설 학기 데이터는 아직 반영하지 않았다.",
+    "목표 학과 필수 고정 과목은 서울고교학점제지원센터 기반 테스트용 수동 초안을 사용했다.",
+    "체육, 예술, 기술·가정/정보/제2외국어/한문/교양은 현재 단계에서 교과군 학점 총량만 관리한다."
+  ],
+  "lockedRequiredSubjects": [
+    "경제 수학",
+    "경제",
+    "금융과 경제생활"
+  ],
+  "recommendedPrioritySubjects": [
+    "직무 영어",
+    "영어 발표와 토론",
+    "국제 관계의 이해",
+    "세계시민과 지리"
+  ],
+  "roadmap": [
+    {
+      "term": "1-1",
+      "commonSubjects": [
+        "공통국어1",
+        "공통수학1",
+        "공통영어1",
+        "한국사1",
+        "통합사회1",
+        "통합과학1",
+        "과학탐구실험1"
+      ],
+      "selectedSubjects": [],
+      "creditBucketGuidance": [
+        "체육 2학점 내외",
+        "예술 2학점 내외",
+        "기술·가정/정보/제2외국어/한문/교양 2~3학점 내외"
+      ],
+      "focus": "공통과목 기반 이수 시작"
+    },
+    {
+      "term": "1-2",
+      "commonSubjects": [
+        "공통국어2",
+        "공통수학2",
+        "공통영어2",
+        "한국사2",
+        "통합사회2",
+        "통합과학2",
+        "과학탐구실험2"
+      ],
+      "selectedSubjects": [],
+      "creditBucketGuidance": [
+        "체육 2학점 내외",
+        "예술 2학점 내외",
+        "기술·가정/정보/제2외국어/한문/교양 2~3학점 내외"
+      ],
+      "focus": "공통과목 기반 이수 완료"
+    },
+    {
+      "term": "2-1",
+      "commonSubjects": [],
+      "selectedSubjects": [
+        {
+          "name": "화법과 언어",
+          "role": "supporting"
+        },
+        {
+          "name": "미적분Ⅰ",
+          "role": "supporting"
+        },
+        {
+          "name": "영어Ⅰ",
+          "role": "supporting"
+        },
+        {
+          "name": "세계시민과 지리",
+          "role": "recommended"
+        }
+      ],
+      "creditBucketGuidance": [
+        "체육 2학점 내외",
+        "예술 2학점 내외",
+        "기술·가정/정보/제2외국어/한문/교양 2~3학점 내외"
+      ],
+      "focus": "상경계열 탐색과 수리/언어 기반 확장"
+    },
+    {
+      "term": "2-2",
+      "commonSubjects": [],
+      "selectedSubjects": [
+        {
+          "name": "독서와 작문",
+          "role": "supporting"
+        },
+        {
+          "name": "확률과 통계",
+          "role": "supporting"
+        },
+        {
+          "name": "영어 독해와 작문",
+          "role": "supporting"
+        },
+        {
+          "name": "사회와 문화",
+          "role": "supporting"
+        }
+      ],
+      "creditBucketGuidance": [
+        "체육 1~2학점",
+        "예술 1~2학점",
+        "기술·가정/정보/제2외국어/한문/교양 2~3학점 내외"
+      ],
+      "focus": "자료 해석과 사회 이해 확장"
+    },
+    {
+      "term": "3-1",
+      "commonSubjects": [],
+      "selectedSubjects": [
+        {
+          "name": "경제 수학",
+          "role": "locked-required"
+        },
+        {
+          "name": "경제",
+          "role": "locked-required"
+        },
+        {
+          "name": "직무 영어",
+          "role": "recommended"
+        }
+      ],
+      "creditBucketGuidance": [
+        "체육 또는 예술 잔여 학점 보완",
+        "기술·가정/정보/제2외국어/한문/교양 잔여 학점 보완"
+      ],
+      "focus": "경영학과 핵심 과목 고정 배치 시작"
+    },
+    {
+      "term": "3-2",
+      "commonSubjects": [],
+      "selectedSubjects": [
+        {
+          "name": "금융과 경제생활",
+          "role": "locked-required"
+        },
+        {
+          "name": "국제 관계의 이해",
+          "role": "recommended"
+        },
+        {
+          "name": "영어 발표와 토론",
+          "role": "recommended"
+        }
+      ],
+      "creditBucketGuidance": [
+        "필수 학점 미달 교과군 최종 보완",
+        "자율 이수 학점 90 충족 점검"
+      ],
+      "focus": "경영학과 진학 맥락의 마무리 과목 배치"
+    }
+  ],
+  "warnings": [
+    "이 로드맵은 학교별 실제 개설 여부와 학기 운영 정보를 반영하지 않은 프로토타입이다.",
+    "필수 고정 과목이 학교에서 미개설이거나 학기 충돌이 있는 경우 과목을 제거하지 말고 conflictRequiredSubject 경고로 유지해야 한다."
+  ],
+  "reviewStatus": "draft"
+}

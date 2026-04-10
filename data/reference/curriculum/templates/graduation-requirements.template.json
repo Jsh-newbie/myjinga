@@ -1,0 +1,36 @@
+[
+  {
+    "id": "graduation-requirements-template-id",
+    "schoolLevel": "high",
+    "schoolType": "general-high-school",
+    "entryYear": 2025,
+    "curriculumRevision": "2022",
+    "creditSummary": {
+      "totalCredits": 192,
+      "requiredCredits": 84,
+      "electiveCredits": 90,
+      "creativeExperientialActivitiesCredits": 18,
+      "creativeExperientialActivitiesHours": 288
+    },
+    "electiveCreditPolicyText": "학생의 적성과 진로를 고려하여 편성",
+    "subjectGroupRequirements": [
+      {
+        "subjectGroup": "국어",
+        "commonSubjects": [
+          "공통국어1",
+          "공통국어2"
+        ],
+        "requiredCredits": 8
+      }
+    ],
+    "constraintNotes": [
+      "예시 템플릿",
+      "실제 값은 출처 검수 후 입력"
+    ],
+    "sourceText": "출처 표기",
+    "reviewStatus": "draft",
+    "notes": [
+      "템플릿 예시"
+    ]
+  }
+]

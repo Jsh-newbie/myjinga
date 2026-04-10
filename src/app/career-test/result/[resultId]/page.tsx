@@ -25,6 +25,11 @@ export default function CareerTestResultPage() {
   const [result, setResult] = useState<ResultData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [favoriteJobCodes, setFavoriteJobCodes] = useState<string[]>([]);
+  const [favoriteMajors, setFavoriteMajors] = useState<Array<{ majorId: string; majorName: string }>>(
+    []
+  );
+  const [savingFavorite, setSavingFavorite] = useState<'job' | 'major' | null>(null);
 
   const auth = useMemo(() => {
     try {
@@ -53,9 +58,20 @@ export default function CareerTestResultPage() {
       setLoadError(null);
       try {
         const token = await user!.getIdToken();
-        const res = await api.getResult(token, resultId);
-        if (res.success) {
-          setResult((res.data.item as unknown as ResultData) ?? null);
+        const [resultResponse, favoriteJobsResponse, favoriteMajorsResponse] = await Promise.all([
+          api.getResult(token, resultId),
+          api.listFavoriteJobs(token),
+          api.listFavoriteMajors(token),
+        ]);
+
+        if (resultResponse.success) {
+          setResult((resultResponse.data.item as unknown as ResultData) ?? null);
+          if (favoriteJobsResponse.success) {
+            setFavoriteJobCodes(favoriteJobsResponse.data.jobs.map((job) => String(job.jobCode)));
+          }
+          if (favoriteMajorsResponse.success) {
+            setFavoriteMajors(favoriteMajorsResponse.data.majors);
+          }
         } else {
           setLoadError('검사 결과를 불러오지 못했습니다.');
         }
@@ -71,8 +87,10 @@ export default function CareerTestResultPage() {
 
   const meta = result?.testTypeId ? CAREER_TESTS[result.testTypeId] : null;
   const detail = result?.reportDetail;
-  const recommendedJobName = detail?.recommendedJobs?.[0]?.name?.trim() ?? '';
-  const recommendedMajorName = detail?.recommendedMajors?.[0]?.name?.trim() ?? '';
+  const recommendedJob = detail?.recommendedJobs?.[0];
+  const recommendedMajor = detail?.recommendedMajors?.[0];
+  const recommendedJobName = recommendedJob?.name?.trim() ?? '';
+  const recommendedMajorName = recommendedMajor?.name?.trim() ?? '';
   const completedDate = result?.completedAt
     ? new Date(result.completedAt._seconds * 1000).toLocaleDateString('ko-KR', {
         year: 'numeric',
@@ -80,6 +98,12 @@ export default function CareerTestResultPage() {
         day: 'numeric',
       })
     : '';
+  const isRecommendedJobSaved = recommendedJob
+    ? favoriteJobCodes.includes(String(recommendedJob.code))
+    : false;
+  const recommendedMajorFavorite = recommendedMajor
+    ? favoriteMajors.find((major) => major.majorName === recommendedMajor.name)
+    : null;
 
   const normalizedRealms = useMemo(
     () =>
@@ -91,6 +115,51 @@ export default function CareerTestResultPage() {
       })),
     [detail?.realms]
   );
+
+  async function handleSaveRecommendedJob() {
+    if (!user || !recommendedJob || savingFavorite) return;
+    setSavingFavorite('job');
+
+    try {
+      const token = await user.getIdToken();
+      const response = await api.addFavoriteJob(token, recommendedJob.code, recommendedJob.name);
+      if (response.success) {
+        setFavoriteJobCodes((prev) => {
+          const next = String(response.data.jobCode);
+          return prev.includes(next) ? prev : [...prev, next];
+        });
+      }
+    } finally {
+      setSavingFavorite(null);
+    }
+  }
+
+  async function handleSaveRecommendedMajor() {
+    if (!user || !recommendedMajor || savingFavorite) return;
+    setSavingFavorite('major');
+
+    try {
+      const token = await user.getIdToken();
+      const response = await api.addFavoriteMajor(token, recommendedMajor.name);
+      if (response.success) {
+        setFavoriteMajors((prev) => {
+          if (prev.some((major) => major.majorId === response.data.majorId)) {
+            return prev;
+          }
+
+          return [
+            ...prev,
+            {
+              majorId: response.data.majorId,
+              majorName: response.data.majorName,
+            },
+          ];
+        });
+      }
+    } finally {
+      setSavingFavorite(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -213,9 +282,62 @@ export default function CareerTestResultPage() {
 
       <section className="ctr-actions">
         <h2 className="ctr-section-title">다음 추천 액션</h2>
+        {recommendedJob && !isRecommendedJobSaved && (
+          <button
+            type="button"
+            className="ctr-action-card ctr-action-card--button"
+            onClick={handleSaveRecommendedJob}
+            disabled={savingFavorite !== null}
+          >
+            <span className="ctr-action-icon">★</span>
+            <span className="ctr-action-copy">
+              <strong>{recommendedJob.name} 관심 직업으로 저장하기</strong>
+              <span>저장하면 대시보드와 인사이트에서 더 자주 이어서 볼 수 있어요.</span>
+            </span>
+            <span className="ct-test-arrow">{savingFavorite === 'job' ? '...' : '+'}</span>
+          </button>
+        )}
+        {recommendedJob && isRecommendedJobSaved && (
+          <Link href="/favorites/jobs" className="ctr-action-card">
+            <span className="ctr-action-icon">★</span>
+            <span className="ctr-action-copy">
+              <strong>{recommendedJob.name} 관심 직업 보기</strong>
+              <span>저장한 직업 목록에서 다시 확인하고 탐색으로 이어갈 수 있어요.</span>
+            </span>
+            <span className="ct-test-arrow">&rsaquo;</span>
+          </Link>
+        )}
+        {recommendedMajor && !recommendedMajorFavorite && (
+          <button
+            type="button"
+            className="ctr-action-card ctr-action-card--button"
+            onClick={handleSaveRecommendedMajor}
+            disabled={savingFavorite !== null}
+          >
+            <span className="ctr-action-icon">★</span>
+            <span className="ctr-action-copy">
+              <strong>{recommendedMajor.name} 관심 학과로 저장하기</strong>
+              <span>학과를 저장해 두면 과목 추천과 학생부 연결에 바로 활용할 수 있어요.</span>
+            </span>
+            <span className="ct-test-arrow">{savingFavorite === 'major' ? '...' : '+'}</span>
+          </button>
+        )}
+        {recommendedMajor && recommendedMajorFavorite && (
+          <Link href="/favorites/majors" className="ctr-action-card">
+            <span className="ctr-action-icon">★</span>
+            <span className="ctr-action-copy">
+              <strong>{recommendedMajor.name} 관심 학과 보기</strong>
+              <span>저장한 학과 목록에서 다시 보고 과목 탐색으로 이어갈 수 있어요.</span>
+            </span>
+            <span className="ct-test-arrow">&rsaquo;</span>
+          </Link>
+        )}
         <Link href="/career-test" className="ctr-action-card">
           <span className="ctr-action-icon">{'\uD83D\uDCCB'}</span>
-          <span>다른 검사도 해보기</span>
+          <span className="ctr-action-copy">
+            <strong>다른 검사도 해보기</strong>
+            <span>적성, 가치관, 진로성숙도까지 이어서 보면 추천 해석이 더 선명해집니다.</span>
+          </span>
           <span className="ct-test-arrow">&rsaquo;</span>
         </Link>
         {recommendedJobName ? (
@@ -224,29 +346,45 @@ export default function CareerTestResultPage() {
             className="ctr-action-card"
           >
             <span className="ctr-action-icon">{'\uD83D\uDD0D'}</span>
-            <span>{recommendedJobName} 탐색하기</span>
+            <span className="ctr-action-copy">
+              <strong>{recommendedJobName} 탐색하기</strong>
+              <span>직업 정보와 필요한 역량을 더 자세히 확인해 보세요.</span>
+            </span>
             <span className="ct-test-arrow">&rsaquo;</span>
           </Link>
         ) : (
           <Link href="/explore/jobs" className="ctr-action-card">
             <span className="ctr-action-icon">{'\uD83D\uDD0D'}</span>
-            <span>직업 탐색으로 이어가기</span>
+            <span className="ctr-action-copy">
+              <strong>직업 탐색으로 이어가기</strong>
+              <span>관심 직업을 찾아 저장하면 맞춤 추천이 더 좋아집니다.</span>
+            </span>
             <span className="ct-test-arrow">&rsaquo;</span>
           </Link>
         )}
         {recommendedMajorName ? (
           <Link
-            href={`/explore/majors?q=${encodeURIComponent(recommendedMajorName)}`}
+            href={
+              recommendedMajor
+                ? `/explore/majors/${recommendedMajor.seq}`
+                : `/explore/majors?q=${encodeURIComponent(recommendedMajorName)}`
+            }
             className="ctr-action-card"
           >
             <span className="ctr-action-icon">{'\uD83C\uDF93'}</span>
-            <span>{recommendedMajorName} 탐색하기</span>
+            <span className="ctr-action-copy">
+              <strong>{recommendedMajorName} 탐색하기</strong>
+              <span>추천 학과의 특성과 관련 교과목을 바로 확인할 수 있어요.</span>
+            </span>
             <span className="ct-test-arrow">&rsaquo;</span>
           </Link>
         ) : (
           <Link href="/records/new" className="ctr-action-card">
             <span className="ctr-action-icon">{'\u270F\uFE0F'}</span>
-            <span>학생부에 기록하기</span>
+            <span className="ctr-action-copy">
+              <strong>학생부에 기록하기</strong>
+              <span>검사에서 떠오른 생각을 바로 기록으로 남겨 보세요.</span>
+            </span>
             <span className="ct-test-arrow">&rsaquo;</span>
           </Link>
         )}

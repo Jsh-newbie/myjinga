@@ -3,8 +3,12 @@
 - 문서 버전: v1.0
 - 기준 문서: `docs/myjinga-development-spec-v1.1.md`, `docs/myjinga-project-rules-v1.0.md`
 - 작성일: 2026-03-05
-- 상태: Draft (개발 착수용)
+- 상태: Draft (초기 전환 계획, 현재 우선순위 기준은 `docs/myjinga-execution-roadmap-v1.0.md`)
 - 적용 범위: 1차 개발(코드베이스 기반 구축 ~ 핵심 사용자 여정 MVP)
+
+---
+
+> 참고: 본 문서는 저장소가 Next.js/Firebase 구조로 전환되기 전 단계의 계획을 포함한다. 현재 실행 우선순위와 검증 순서는 `docs/myjinga-execution-roadmap-v1.0.md`를 기준으로 한다.
 
 ---
 
