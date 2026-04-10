@@ -1,9 +1,11 @@
 # 마진가(Myjinga) 고도화 개발 실행 명세서
 
 - 문서 버전: v1.1
-- 기준 문서: `마진가_Myjinga_종합개발기획서_v1.0.md`
+- 기준 문서: `마진가_Myjinga_종합개발기획서_v1.0.md`, `docs/myjinga-course-recommendation-rules-spec-v1.0.md`, `docs/myjinga-curriculum-reference-data-spec-v1.0.md`, `docs/myjinga-course-planning-eligibility-spec-v1.0.md`
 - 작성일: 2026-03-05
+- 최근 수정일: 2026-04-10
 - 상태: 개발 착수용 실행 명세
+- 적용 범위: 아키텍처, 도메인 모델, API 계약, 인증/결제/AI/운영 정책, 테스트/릴리스 기준
 - 독자: PM, FE/BE 개발자, QA, 운영 담당자
 
 ---
@@ -88,9 +90,11 @@ MVP에서는 `student`, `admin`만 실제 권한 처리한다.
 1. User: 계정, 학교 정보, 구독 정보, 보호자 동의 상태
 2. TestResult: 커리어넷 검사 결과 원본/정규화 데이터
 3. Major/Subject: 추천 로직 기반 데이터셋
-4. Record: 학생부 활동 기록 단위
-5. Subscription/Payment: 결제 상태와 이력
-6. AIUsageLog: 호출량, 과금, 실패 추적
+4. GraduationRequirement: 교과군별 필수 이수 규정, 총 이수/자율 이수 제약
+5. CreditOperationPolicy: 과목 기본 학점, 편성·운영 범위, 증감 허용 규칙
+6. Record: 학생부 활동 기록 단위
+7. Subscription/Payment: 결제 상태와 이력
+8. AIUsageLog: 호출량, 과금, 실패 추적
 
 ## 4.3 Firestore 컬렉션 명세
 
@@ -146,23 +150,131 @@ MVP에서는 `student`, `admin`만 실제 권한 처리한다.
   - `hours`는 봉사 카테고리에서만 허용
   - `aiDraft`는 premium 사용자만 생성 가능
 
+## curriculumSources/{sourceId}
+
+- required:
+  - `title: string`
+  - `fileName: string`
+  - `curriculumRevision: string`
+  - `guideYear: number`
+  - `region: string`
+  - `publisher: string`
+  - `publishedAt: timestamp`
+  - `pageCount: number`
+- optional:
+  - `checksum: string`
+  - `status: "active" | "archived"`
+
+## fieldSubjectGuides/{guideId}
+
+- required:
+  - `field: string`
+  - `coreSubjects: string[]`
+  - `recommendedSubjects: string[]`
+  - `sourceRefs: object[]`
+- optional:
+  - `subfield: string`
+  - `notes: string[]`
+
 ## majors/{majorId}
 
 - required:
-  - `name, field, description`
-  - `recommendedSubjects.general: string[]`
-  - `recommendedSubjects.career: string[]`
-  - `recommendedSubjects.convergence: string[]`
-  - `relatedJobs: string[]`
+  - `nameKo: string`
+  - `fieldNameKo: string`
+  - `summary: string`
+  - `sourceRefs: object[]`
 - optional:
-  - `relatedMajors, majorSubjects, targetStudents`
+  - `aliasesKo: string[]`
+  - `fieldGuideId: string`
+  - `recommendedStudentTraits: string[]`
+  - `majorCourseBuckets: { label: string; courseNames: string[] }[]`
+  - `similarMajorGroups: { label: string; majorNames: string[] }[]`
+  - `careerPathGroups: { label: string; careerNames: string[] }[]`
+  - `universityExampleGroups: { label: string; seoul?: string[]; metro?: string[]; nonMetro?: string[] }[]`
+  - `relatedHighSchoolSubjectExamples: { general: string[]; career: string[]; convergence: string[] }`
+  - `notes: string[]`
+
+메모:
+- `review/majors-draft.json`은 원문 보존을 위해 `sourceText`, `reviewStatus`, `notes`를 함께 가질 수 있다.
+- Firestore 서빙 데이터는 페이지 단위 추적을 위해 `sourceRefs`를 사용한다.
 
 ## subjects/{subjectId}
 
 - required:
-  - `name, category, type, description`
+  - `name: string`
+  - `subjectGroup: string`
+  - `selectionType: "common" | "general" | "career" | "convergence" | "specialized"`
+  - `summary: string`
+  - `keyTopics: string[]`
+  - `sourceRefs: object[]`
 - optional:
-  - `credits, evaluation, suneung, prerequisites`
+  - `aliases: string[]`
+  - `creditPolicy: object`
+  - `evaluation: object`
+  - `relatedJobs: string[]`
+  - `relatedMajorNames: string[]`
+  - `tags: string[]`
+
+## majorSubjectLinks/{linkId}
+
+- required:
+  - `majorId: string`
+  - `subjectId: string`
+  - `selectionBucket: "general" | "career" | "convergence"`
+  - `recommendationStrength: "core" | "recommended" | "exploratory"`
+  - `sourceRefs: object[]`
+- optional:
+  - `sourceType: "majorExample" | "fieldGuide" | "manualCuration"`
+  - `reason: string`
+
+## graduationRequirements/{policyId}
+
+- required:
+  - `schoolType: "general-high-school"`
+  - `entryYear: number`
+  - `curriculumRevision: string`
+  - `creditSummary: object`
+  - `subjectGroupRequirements: object[]`
+- optional:
+  - `electiveCreditPolicyText: string`
+  - `constraintNotes: string[]`
+  - `sourceText: string`
+- constraints:
+  - 추천 가능 여부 검사는 `subjects`보다 먼저 `graduationRequirements`를 기준으로 수행
+  - `체육`, `예술`, `기술·가정/정보/제2외국어/한문/교양`은 현재 단계에서 학점 총량 기준 검증 허용
+
+## creditOnlySubjectGroupRequirements/{entryId}
+
+- required:
+  - `subjectGroup: string`
+  - `requiredCredits: number`
+  - `validationMode: "credits-only"`
+- optional:
+  - `subjectMetadataStatus: "not-started" | "partial"`
+  - `knownStructure: object`
+  - `childSubjectGroups: string[]`
+  - `sourceText: string`
+- constraints:
+  - `graduationRequirements.subjectGroupRequirements[].validationMode = "credits-only"`인 교과군만 대상으로 한다.
+  - 현재 단계에서는 세부 과목 일치보다 필수 학점 총량 충족 여부 검증에 사용한다.
+
+## creditOperationPolicies/{policyId}
+
+- required:
+  - `schoolType: "general-high-school"`
+  - `entryYear: number`
+  - `curriculumRevision: string`
+  - `policyCategory: "common" | "selection"`
+  - `appliesTo: object`
+  - `defaultCredits: number`
+  - `creditRange: { min: number, max: number }`
+  - `adjustmentPolicy: object`
+- optional:
+  - `exceptionRules: object[]`
+  - `sourceText: string`
+- constraints:
+  - `graduationRequirements`가 `무엇을 들어야 하는가`를 정의한다면, `creditOperationPolicies`는 `몇 학점으로 편성할 수 있는가`를 정의한다.
+  - 학교별 실제 개설 과목 데이터(`schoolSubjectOfferings`)와 분리해 관리한다.
 
 ## subscriptions/{subscriptionId}
 
@@ -199,7 +311,8 @@ MVP에서는 `student`, `admin`만 실제 권한 처리한다.
 2. `users/{uid}/records`: `semester ASC, updatedAt DESC`
 3. `users/{uid}/testResults`: `testType ASC, completedAt DESC`
 4. `majors`: `field ASC, name ASC`
-5. `subjects`: `category ASC, type ASC, name ASC`
+5. `subjects`: `subjectGroup ASC, selectionType ASC, name ASC`
+6. `majorSubjectLinks`: `majorId ASC, selectionBucket ASC, recommendationStrength ASC`
 
 ## 5.2 금지 쿼리
 
@@ -217,7 +330,7 @@ MVP에서는 `student`, `admin`만 실제 권한 처리한다.
 2. 서버: 토큰 검증 후 `uid`, `role`, `subscription` 조회
 3. 권한 정책:
   - 본인 데이터만 읽기/쓰기
-  - `majors`, `subjects`는 인증 사용자 읽기 전용
+  - `curriculumSources`, `fieldSubjectGuides`, `majors`, `subjects`, `majorSubjectLinks`는 인증 사용자 읽기 전용
   - 관리자 쓰기 작업은 Admin SDK 전용 경로로 분리
 
 ## 6.2 만 14세 미만 동의
@@ -238,6 +351,17 @@ MVP에서는 `student`, `admin`만 실제 권한 처리한다.
 2. API 응답에서 내부 오류 스택 노출 금지
 3. 파일 업로드 확장자/용량 제한(예: pdf, jpg, png / 10MB)
 4. 웹훅 서명 검증 실패 시 즉시 401 반환
+
+## 6.5 계정 복구 및 비밀번호 재설정 이메일 정책
+
+1. MVP에서는 Firebase Auth 관리형 비밀번호 재설정 메일을 기본 사용한다. 클라이언트는 `sendPasswordResetEmail`만 호출하고, 메일 템플릿과 기본 액션 링크 생성은 Firebase 관리 범위로 둔다.
+2. 무상 또는 저비용 커스터마이즈 허용 범위는 아래 3가지다.
+  - Firebase Console의 `Password reset` 템플릿 문구 수정
+  - Firebase 프로젝트 `public-facing name` 수정
+  - 클라이언트 `auth.languageCode = "ko"` 설정을 통한 한국어 메일 우선 적용
+3. 브랜드 도메인 기반 메일은 보유 도메인과 DNS 검증이 선행 조건이다. 도메인 구매/갱신 비용은 외부 비용으로 본다.
+4. 완전 커스텀 HTML 메일은 MVP 범위 밖이다. 도입 시 `generatePasswordResetLink()` 기반 서버 링크 생성, 외부 메일 발송 서비스, 링크 만료/리다이렉트 정책, 감사 로그 정책을 함께 설계하고 ADR 작성 후 진행한다.
+5. 공개 로그인 화면에서 이메일 존재 여부를 직접 알려주는 `계정 찾기` API는 기본 금지한다. 계정 복구는 안내형 UX 또는 인증된 사용자 프로필 경로를 우선 사용해 계정 열거 위험을 줄인다.
 
 ---
 
@@ -478,6 +602,7 @@ MVP에서는 `student`, `admin`만 실제 권한 처리한다.
 2. 미성년자 동의 고도화(본인인증 API 도입 시점)
 3. 환불 정책 세부 기준(부분 환불/중도 해지)
 4. 부모/교사 계정 롤아웃 우선순위
+5. 비밀번호 재설정 메일을 Firebase 관리형으로 유지할지, 외부 메일 서비스 기반 브랜드 메일로 전환할지 결정
 
 ---
 
@@ -489,6 +614,24 @@ MVP에서는 `student`, `admin`만 실제 권한 처리한다.
 4. 데이터 추출/적재 스크립트
 5. QA 시나리오 문서
 6. 운영 런북
+
+---
+
+## 17. 변경 이력
+
+### v1.1 - 2026-04-09
+
+1. 문서 헤더에 `최근 수정일`, `적용 범위`를 추가해 문서 규칙과 정합성을 보강
+2. 계정 복구 및 비밀번호 재설정 이메일 정책 신설
+3. Firebase 관리형 메일의 무상 커스터마이즈 범위와 향후 브랜드 메일 전환 조건 명시
+
+### v1.1 - 2026-04-10
+
+1. 교육과정 참조 데이터 스펙을 기준 문서에 추가
+2. `curriculumSources`, `fieldSubjectGuides`, `majorSubjectLinks`를 포함한 참조 데이터 레이어 반영
+3. `majors`, `subjects` 도메인 모델과 인덱스/권한 설명을 통합 데이터 모델 기준으로 보강
+4. `creditOperationPolicies`를 추가해 과목 기본 학점과 편성·운영 범위를 별도 참조 규칙으로 정의
+5. 통합 상위 규칙 문서(`myjinga-course-recommendation-rules-spec-v1.0.md`)를 기준 문서에 추가
 
 ---
 
